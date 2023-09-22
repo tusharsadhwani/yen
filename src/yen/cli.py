@@ -10,5 +10,5 @@ def cli() -> None:
     parser.add_argument("venv_path")
     args = parser.parse_args()
 
-    ensure_python()
-    create_venv(args.venv_path)
+    python_bin_path = ensure_python()
+    create_venv(python_bin_path, args.venv_path)

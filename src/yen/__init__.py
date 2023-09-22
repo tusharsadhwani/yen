@@ -1,9 +1,8 @@
 """yen - Yet another Python environment manager."""
 import os.path
 import platform
-import shutil
+import subprocess
 import tarfile
-import venv
 
 from yen.downloader import download
 
@@ -55,7 +54,7 @@ def ensure_python() -> None:
     python_bin_path = os.path.join(PYTHON_INSTALLS_PATH, "python/bin/python3")
     if os.path.exists(python_bin_path):
         # already installed
-        return
+        return python_bin_path
 
     download_python()
 
@@ -63,12 +62,10 @@ def ensure_python() -> None:
     return python_bin_path
 
 
-def create_venv(venv_path: str) -> None:
-    venv_name = os.path.basename(venv_path)
-
+def create_venv(python_bin_path: str, venv_path: str) -> None:
     if os.path.exists(venv_path):
         print("Error: path already exists.")
         return
 
-    venv.create(venv_path, prompt=venv_name, with_pip=True)
+    subprocess.run([python_bin_path, "-m", "venv", venv_path])
     print("Created", venv_path)
