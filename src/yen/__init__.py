@@ -70,5 +70,5 @@ def create_venv(venv_path: str) -> None:
         print("Error: path already exists.")
         return
 
-    venv.create(venv_path, prompt=venv_name)
+    venv.create(venv_path, prompt=venv_name, with_pip=True)
     print("Created", venv_path)
