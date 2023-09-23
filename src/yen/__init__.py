@@ -1,71 +1,51 @@
 """yen - Yet another Python environment manager."""
 import os.path
-import platform
 import subprocess
 import tarfile
 
 from yen.downloader import download
+from yen.github import NotAvailable, resolve_python_version
 
 PYTHON_INSTALLS_PATH = os.path.expanduser("~/.yen_pythons")
 
-DOWNLOAD_LINKS = {
-    "Darwin": {
-        "arm64": "https://github.com/indygreg/python-build-standalone/releases/download/20230826/cpython-3.11.5+20230826-aarch64-apple-darwin-install_only.tar.gz",
-        "x86_64": "https://github.com/indygreg/python-build-standalone/releases/download/20230826/cpython-3.11.5+20230826-x86_64-apple-darwin-install_only.tar.gz",
-    },
-    "Linux": {
-        "arm64": {
-            "glibc": "https://github.com/indygreg/python-build-standalone/releases/download/20230826/cpython-3.11.5+20230826-aarch64-unknown-linux-gnu-install_only.tar.gz",
-            # musl doesn't exist
-        },
-        "x86_64": {
-            "glibc": "https://github.com/indygreg/python-build-standalone/releases/download/20230826/cpython-3.11.5+20230826-x86_64_v3-unknown-linux-gnu-install_only.tar.gz",
-            "musl": "https://github.com/indygreg/python-build-standalone/releases/download/20230826/cpython-3.11.5+20230826-x86_64_v2-unknown-linux-musl-install_only.tar.gz",
-        },
-    },
-}
 
-
-# TODO: take version
-def download_python() -> None:
-    """Downloads a Python version. The version can be something like '3.11.5'."""
-    download_link = DOWNLOAD_LINKS[platform.system()][platform.machine()]
-    # linux links are nested under glibc or musl builds
-    libc_version = platform.libc_ver()[0]
-    if libc_version:
-        download_link = download_link[libc_version]
-
-    downloaded_filepath = download(
-        download_link,
-        "Downloading Python 3.11.5",
-        PYTHON_INSTALLS_PATH,
-    )
-
-    with tarfile.open(downloaded_filepath, mode="r:gz") as tar:
-        # TODO: give version as path
-        tar.extractall(PYTHON_INSTALLS_PATH)
-
-
-# TODO: take version
-def ensure_python() -> None:
+def ensure_python(python_version: str) -> tuple[str, str]:
     """Checks if given Python version exists locally. If not, downloads it."""
     os.makedirs(PYTHON_INSTALLS_PATH, exist_ok=True)
 
-    python_bin_path = os.path.join(PYTHON_INSTALLS_PATH, "python/bin/python3")
+    try:
+        python_version, download_link = resolve_python_version(python_version)
+    except NotAvailable:
+        print(
+            "Error: requested Python version is not available."
+            " Use 'yen list' to get list of available Pythons."
+        )
+
+    download_directory = os.path.join(PYTHON_INSTALLS_PATH, python_version)
+
+    python_bin_path = os.path.join(download_directory, "python/bin/python3")
     if os.path.exists(python_bin_path):
         # already installed
-        return python_bin_path
+        return python_version, python_bin_path
 
-    download_python()
+    os.makedirs(download_directory)
+    downloaded_filepath = download(
+        download_link,
+        f"Downloading {python_version}",
+        download_directory,
+    )
+
+    with tarfile.open(downloaded_filepath, mode="r:gz") as tar:
+        tar.extractall(download_directory)
 
     assert os.path.exists(python_bin_path)
-    return python_bin_path
+    return python_version, python_bin_path
 
 
-def create_venv(python_bin_path: str, venv_path: str) -> None:
+def create_venv(python_version: str, python_bin_path: str, venv_path: str) -> None:
     if os.path.exists(venv_path):
-        print("Error: path already exists.")
+        print(f"Error: {venv_path} already exists.")
         return
 
     subprocess.run([python_bin_path, "-m", "venv", venv_path])
-    print("Created", venv_path)
+    print(f"Created {venv_path} with Python {python_version} ✨")
