@@ -43,10 +43,12 @@ def get_latest_python_releases() -> list[str]:
 
 def list_pythons() -> dict[str, str]:
     """Returns available python versions for your machine and their download links."""
-    download_link_suffix = MACHINE_SUFFIX[platform.system()][platform.machine()]
-    # linux names are nested under glibc or musl builds
-    libc_version = platform.libc_ver()[0]
-    if libc_version:
+    system, machine = platform.system(), platform.machine()
+    download_link_suffix = MACHINE_SUFFIX[system][machine]
+    # linux suffixes are nested under glibc or musl builds
+    if system == "Linux":
+        # fallback to musl if libc version is not found
+        libc_version = platform.libc_ver()[0] or "musl"
         download_link_suffix = download_link_suffix[libc_version]
 
     python_releases = get_latest_python_releases()
