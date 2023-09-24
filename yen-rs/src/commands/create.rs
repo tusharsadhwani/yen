@@ -1,11 +1,9 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, process::Command};
 
 use clap::Parser;
+use miette::IntoDiagnostic;
 
-use crate::{
-    github::Version,
-    utils::{create_env, ensure_python},
-};
+use crate::{github::Version, utils::ensure_python};
 
 /// Create venv with python version
 #[derive(Parser, Debug)]
@@ -18,6 +16,33 @@ pub struct Args {
     /// Python version to create venv
     #[arg(short, long, required = true)]
     python: Version,
+}
+
+pub async fn create_env(
+    version: Version,
+    python_bin_path: PathBuf,
+    venv_path: PathBuf,
+) -> miette::Result<()> {
+    if venv_path.exists() {
+        miette::bail!("Error: {} already exists!", venv_path.to_string_lossy());
+    }
+
+    let stdout = Command::new(format!("{}", python_bin_path.to_string_lossy()))
+        .args(["-m", "venv", &format!("{}", venv_path.to_string_lossy())])
+        .output()
+        .into_diagnostic()?;
+
+    if !stdout.status.success() {
+        miette::bail!("Error: unable to create venv!");
+    }
+
+    eprintln!(
+        "Created {} with Python {} ✨",
+        venv_path.to_string_lossy(),
+        version
+    );
+
+    Ok(())
 }
 
 pub async fn execute(args: Args) -> miette::Result<()> {

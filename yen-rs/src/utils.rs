@@ -4,7 +4,6 @@ use std::{
     fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
-    process::Command,
 };
 
 use flate2::read::GzDecoder;
@@ -53,33 +52,6 @@ pub async fn ensure_python(version: Version) -> miette::Result<(Version, PathBuf
         .into_diagnostic()?;
 
     Ok((version, python_bin_path))
-}
-
-pub async fn create_env(
-    version: Version,
-    python_bin_path: PathBuf,
-    venv_path: PathBuf,
-) -> miette::Result<()> {
-    if venv_path.exists() {
-        miette::bail!("Error: {} already exists!", venv_path.to_string_lossy());
-    }
-
-    let stdout = Command::new(format!("{}", python_bin_path.to_string_lossy()))
-        .args(["-m", "venv", &format!("{}", venv_path.to_string_lossy())])
-        .output()
-        .into_diagnostic()?;
-
-    if !stdout.status.success() {
-        miette::bail!("Error: unable to create venv!");
-    }
-
-    eprintln!(
-        "Created {} with Python {}",
-        venv_path.to_string_lossy(),
-        version
-    );
-
-    Ok(())
 }
 
 pub async fn download(link: &str, path: &Path) -> miette::Result<PathBuf> {
@@ -178,7 +150,7 @@ pub fn detect_target() -> miette::Result<String> {
 #[cfg(target_os = "linux")]
 pub fn is_glibc() -> miette::Result<bool> {
     let p = PathBuf::from("/usr/bin/ldd");
-    let content = read_to_string(&p)?;
+    let content = read_to_string(p)?;
 
     if MUSL.is_match(&content) {
         Ok(true)
