@@ -167,7 +167,7 @@ pub fn detect_target() -> miette::Result<String> {
 
 pub fn is_glibc() -> miette::Result<bool> {
     let p = PathBuf::from("/usr/bin/ldd");
-    let content = read_to_string(&p)?;
+    let content = read_to_string(p)?;
 
     if MUSL.is_match(&content) {
         Ok(true)
