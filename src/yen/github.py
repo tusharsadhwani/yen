@@ -10,7 +10,7 @@ MACHINE_SUFFIX = {
         "x86_64": "x86_64-apple-darwin-install_only.tar.gz",
     },
     "Linux": {
-        "arm64": {
+        "aarch64": {
             "glibc": "aarch64-unknown-linux-gnu-install_only.tar.gz",
             # musl doesn't exist
         },
