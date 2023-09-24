@@ -33,7 +33,7 @@ if ! hash curl 2> /dev/null; then
   exit 1
 fi
 
-TEMP_FILE=$(mktemp "${TMPDIR:-/tmp}/.pixi_install.XXXXXXXX")
+TEMP_FILE=$(mktemp "${TMPDIR:-/tmp}/.yen_install.XXXXXXXX")
 
 cleanup() {
   rm -f "$TEMP_FILE"
@@ -47,7 +47,7 @@ if [[ ${HTTP_CODE} -lt 200 || ${HTTP_CODE} -gt 299 ]]; then
   exit 1
 fi
 
-# Move pixi to the install directory
+# Move yen to the install directory
 mkdir -p "$INSTALL_DIR"
 cp "$TEMP_FILE" "$INSTALL_DIR/yen"
 
