@@ -10,13 +10,13 @@ REPO=tusharsadhwani/yen
 PLATFORM=$(uname -s)
 ARCH=$(uname -m)
 
-if [[ $PLATFORM == "Darwin" ]]; then
+if [ $PLATFORM = "Darwin" ]; then
   PLATFORM="apple-darwin"
-elif [[ $PLATFORM == "Linux" ]]; then
+elif [ $PLATFORM = "Linux" ]; then
   PLATFORM="unknown-linux-musl"
 fi
 
-if [[ $ARCH == "arm64" ]] || [[ $ARCH == "aarch64" ]]; then
+if [ $ARCH == "arm64" ] || [ $ARCH == "aarch64" ]; then
   ARCH="aarch64"
 fi
 
@@ -40,7 +40,7 @@ cleanup() {
 trap cleanup EXIT
 
 HTTP_CODE=$(curl -SL --progress-bar "$DOWNLOAD_URL" --output "$TEMP_FILE" --write-out "%{http_code}")
-if [[ ${HTTP_CODE} -lt 200 || ${HTTP_CODE} -gt 299 ]]; then
+if [ ${HTTP_CODE} -lt 200 ] || [ ${HTTP_CODE} -gt 299 ]; then
   echo "error: '${DOWNLOAD_URL}' is not available"
   exit 1
 fi
