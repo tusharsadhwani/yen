@@ -2,8 +2,6 @@
 
 # Copied from https://github.com/prefix-dev/pixi/blob/d8d2d8a/install/install.sh
 
-set -euo pipefail
-
 __wrap__() {
 
 INSTALL_DIR="$HOME/.yen/bin"
