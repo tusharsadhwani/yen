@@ -16,7 +16,6 @@ lazy_static = "1.4.0"
 log = "0.4.20"
 miette = { version = "5.10.0", features = ["fancy"] }
 uname = "0.1.1"
-detect-targets = "0.1.11"
 tokio = { version = "1.32.0", features = ["rt-multi-thread"] }
 regex = "1.9.5"
 reqwest = { version = "0.11.20", default-features = false, features = ["rustls-tls", "json", "stream"] }

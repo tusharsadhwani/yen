@@ -1,7 +1,7 @@
 use std::{
     cmp::min,
     fs::{self, File},
-    io::Write,
+    io::{Read, Write},
     path::{Path, PathBuf},
     process::Command,
 };
@@ -15,7 +15,7 @@ use tar::Archive;
 
 use crate::{
     github::{resolve_python_version, Version},
-    PYTHON_INSTALLS_PATH, YEN_CLIENT,
+    MUSL, PYTHON_INSTALLS_PATH, YEN_CLIENT,
 };
 
 pub async fn ensure_python(version: Version) -> miette::Result<(Version, PathBuf)> {
@@ -137,4 +137,55 @@ pub fn yen_client() -> reqwest::Client {
 pub fn home_dir() -> PathBuf {
     #[allow(deprecated)]
     std::env::home_dir().expect("Unable to get home dir")
+}
+
+pub fn detect_target() -> miette::Result<String> {
+    #[cfg(target_os = "linux")]
+    {
+        let gnu = is_glibc()?;
+        if gnu {
+            #[cfg(target_arch = "x86_64")]
+            return Ok("x86_64-unknown-linux-gnu".into());
+
+            #[cfg(target_arch = "aarch64")]
+            return Ok("aarch64-unknown-linux-gnu".into());
+        } else {
+            #[cfg(target_arch = "x86_64")]
+            return Ok("x86_64-unknown-linux-musl".into());
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        #[cfg(target_arch = "x86_64")]
+        return Ok("x86_64-apple-darwin".into());
+
+        #[cfg(target_arch = "aarch64")]
+        return Ok("aarch64-apple-darwin".into());
+    }
+}
+
+pub fn is_glibc() -> miette::Result<bool> {
+    let p = PathBuf::from("/usr/bin/ldd");
+    let content = read_to_string(&p)?;
+
+    if MUSL.is_match(&content) {
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+pub fn read_to_string<P>(path: P) -> miette::Result<String>
+where
+    P: AsRef<Path>,
+{
+    let mut buf = String::new();
+
+    File::open(&path)
+        .into_diagnostic()?
+        .read_to_string(&mut buf)
+        .into_diagnostic()?;
+
+    Ok(buf)
 }

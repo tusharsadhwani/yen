@@ -21,6 +21,7 @@ lazy_static! {
     static ref GITHUB_API_URL: &'static str =
         "https://api.github.com/repos/indygreg/python-build-standalone/releases/latest";
     static ref RE: Regex = Regex::new(r"cpython-(\d+\.\d+.\d+)").expect("Unable to create regex!");
+    static ref MUSL: Regex = Regex::new(r"GNU|GLIBC|glibc").expect("Unable to create regex!");
     static ref PYTHON_INSTALLS_PATH: PathBuf = home_dir().join(".yen_pythons");
     static ref YEN_CLIENT: Client = yen_client();
 }

@@ -1,10 +1,9 @@
 use std::{collections::BTreeMap, fmt::Display, str::FromStr};
 
-use detect_targets::detect_targets;
 use miette::IntoDiagnostic;
 use serde::Deserialize;
 
-use crate::{GITHUB_API_URL, RE, YEN_CLIENT};
+use crate::{utils::detect_target, GITHUB_API_URL, RE, YEN_CLIENT};
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct GithubResp {
@@ -100,7 +99,7 @@ impl MachineSuffix {
     }
 
     async fn default() -> miette::Result<Self> {
-        match detect_targets().await[0].as_str() {
+        match detect_target()?.as_str() {
             "x86_64-unknown-linux-musl" => Ok(Self::LinuxX64Musl),
             "x86_64-unknown-linux-gnu" => Ok(Self::LinuxX64GlibC),
             "aarch64-unknown-linux-gnu" => Ok(Self::LinuxAarch64),
