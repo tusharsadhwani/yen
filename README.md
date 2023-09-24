@@ -1,14 +1,20 @@
 # yen
 
-The easiest Python environment manager.
+The easiest Python environment manager. Create virtual environments for any Python version, without needing Python pre-installed.
 
 ## Installation
+
+Get the tool by running the following command:
+
+```bash
+curl -L yen.tushar.lol | sh
+```
+
+or if you prefer, get it by `pip`:
 
 ```bash
 pip install yen
 ```
-
-> Note: An install script will be available soon, which won't need `python` pre installed.
 
 ## Usage
 
