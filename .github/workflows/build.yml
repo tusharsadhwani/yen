@@ -31,8 +31,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          path: "yen-rs"
 
       - name: Extract crate information
         id: crate_metadata
@@ -96,8 +94,6 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
-        with:
-          path: "yen-rs"
 
       - name: Install Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -149,6 +145,7 @@ jobs:
           cargo build
           --locked
           --release
+          --manifest-path yen-rs/Cargo.toml
           ${{ steps.build-options.outputs.CARGO_BUILD_OPTIONS}}
 
       - name: Set binary name & path
@@ -157,7 +154,7 @@ jobs:
         run: |
           # Setup paths
           BIN_NAME="${{ needs.crate_metadata.outputs.name }}"
-          BIN_PATH="target/${{ matrix.target }}/release/${BIN_NAME}"
+          BIN_PATH="yen-rs/target/${{ matrix.target }}/release/${BIN_NAME}"
 
           mv $BIN_PATH $BIN_PATH-${{matrix.target}}
           BIN_PATH=$BIN_PATH-${{matrix.target}}
