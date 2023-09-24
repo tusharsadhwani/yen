@@ -2,7 +2,7 @@ use std::{
     cmp::min,
     env::consts,
     fs::{self, File},
-    io::{Read, Write},
+    io::Write,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -16,8 +16,14 @@ use tar::Archive;
 
 use crate::{
     github::{resolve_python_version, Version},
-    MUSL, PYTHON_INSTALLS_PATH, YEN_CLIENT,
+    PYTHON_INSTALLS_PATH, YEN_CLIENT,
 };
+
+#[cfg(target_os = "linux")]
+use crate::MUSL;
+
+#[cfg(target_os = "linux")]
+use std::io::Read;
 
 pub async fn ensure_python(version: Version) -> miette::Result<(Version, PathBuf)> {
     if !PYTHON_INSTALLS_PATH.exists() {
@@ -169,9 +175,10 @@ pub fn detect_target() -> miette::Result<String> {
     miette::bail!("{}-{} is not supported", consts::OS, consts::ARCH);
 }
 
+#[cfg(target_os = "linux")]
 pub fn is_glibc() -> miette::Result<bool> {
     let p = PathBuf::from("/usr/bin/ldd");
-    let content = read_to_string(p)?;
+    let content = read_to_string(&p)?;
 
     if MUSL.is_match(&content) {
         Ok(true)
@@ -180,6 +187,7 @@ pub fn is_glibc() -> miette::Result<bool> {
     }
 }
 
+#[cfg(target_os = "linux")]
 pub fn read_to_string<P>(path: P) -> miette::Result<String>
 where
     P: AsRef<Path>,
