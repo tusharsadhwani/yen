@@ -7,7 +7,7 @@ The easiest Python environment manager. Create virtual environments for any Pyth
 Get the tool by running the following command:
 
 ```bash
-curl -L yen.tushar.lol | sh
+curl -L yen.tushar.lol | bash
 ```
 
 or if you prefer, get it by `pip`:
