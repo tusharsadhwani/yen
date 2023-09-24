@@ -1,0 +1,28 @@
+[package]
+name = "yen-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tar = "0.4.40"
+clap = "4.4.4"
+clap-verbosity-flag = "2.0.1"
+env_logger = "0.10.0"
+flate2 = "1.0.27"
+indicatif = "0.17.7"
+lazy_static = "1.4.0"
+log = "0.4.20"
+miette = { version = "5.10.0", features = ["fancy"] }
+uname = "0.1.1"
+tokio = { version = "1.32.0", features = ["rt-multi-thread"] }
+regex = "1.9.5"
+reqwest = { version = "0.11.20", default-features = false, features = ["rustls-tls", "json", "stream"] }
+serde_json = "1.0.107"
+serde = { version = "1.0.188", features = ["derive"] }
+futures-util = "0.3.28"
+
+[profile.release]
+lto = true
+opt-level = 'z'
