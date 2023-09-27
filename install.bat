@@ -3,7 +3,7 @@
 SET yenpath=%userprofile%\.yen\bin
 mkdir %yenpath%
 
-SET download_url="https://github.com/tusharsadhwani/yen/releases/latest/download/yen-x86_64-pc-windows-msvc.exe"
+SET download_url=https://github.com/tusharsadhwani/yen/releases/latest/download/yen-rs-x86_64-pc-windows-msvc.exe
 curl -SL --progress-bar %download_url% --output %yenpath%\yen.exe
 
 :: Set PATH if not present
