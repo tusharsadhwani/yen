@@ -1,3 +1,4 @@
+# Taken from https://github.com/prefix-dev/pixi/blob/c32351a/.github/workflows/rust.yml
 name: Build Static Binary
 
 on:
@@ -155,8 +156,13 @@ jobs:
         id: bin
         shell: bash
         run: |
+          EXE_SUFFIX=""
+          case ${{ matrix.target }} in
+            *-pc-windows-*) EXE_SUFFIX=".exe" ;;
+          esac;
+
           # Setup paths
-          BIN_NAME="${{ needs.crate_metadata.outputs.name }}"
+          BIN_NAME="${{ needs.crate_metadata.outputs.name }}${EXE_SUFFIX}"
           BIN_PATH="yen-rs/target/${{ matrix.target }}/release/${BIN_NAME}"
 
           mv $BIN_PATH $BIN_PATH-${{matrix.target}}
