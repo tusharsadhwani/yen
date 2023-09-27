@@ -76,7 +76,7 @@ jobs:
           - {
               name: "windows-x86_64",
               target: x86_64-pc-windows-msvc,
-              os: macOS-latest,
+              os: windows-latest,
             }
     env:
       #
