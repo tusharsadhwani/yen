@@ -19,7 +19,7 @@ MACHINE_SUFFIX = {
         },
     },
     "Windows": {
-        "x86_64": "x86_64-pc-windows-msvc-shared-install_only.tar.gz"
+        "AMD64": "x86_64-pc-windows-msvc-shared-install_only.tar.gz"
     }
 }
 
