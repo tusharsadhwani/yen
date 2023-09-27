@@ -23,7 +23,10 @@ def ensure_python(python_version: str) -> tuple[str, str]:
 
     download_directory = os.path.join(PYTHON_INSTALLS_PATH, python_version)
 
-    python_bin_path = os.path.join(download_directory, "python/bin/python3")
+    if os.name == 'nt':
+        python_bin_path = os.path.join(download_directory, "python/python.exe")
+    else:
+        python_bin_path = os.path.join(download_directory, "python/bin/python3")
     if os.path.exists(python_bin_path):
         # already installed
         return python_version, python_bin_path
@@ -37,6 +40,8 @@ def ensure_python(python_version: str) -> tuple[str, str]:
 
     with tarfile.open(downloaded_filepath, mode="r:gz") as tar:
         tar.extractall(download_directory)
+
+    os.remove(downloaded_filepath)
 
     assert os.path.exists(python_bin_path)
     return python_version, python_bin_path

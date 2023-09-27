@@ -3,7 +3,6 @@ import platform
 import re
 from urllib.request import urlopen
 
-# https://github.com/indygreg/python-build-standalone/releases/download/20230826/cpython-3.11.5+20230826-
 MACHINE_SUFFIX = {
     "Darwin": {
         "arm64": "aarch64-apple-darwin-install_only.tar.gz",
@@ -19,13 +18,12 @@ MACHINE_SUFFIX = {
             "musl": "x86_64_v3-unknown-linux-musl-install_only.tar.gz",
         },
     },
+    "Windows": {
+        "x86_64": "x86_64-pc-windows-msvc-shared-install_only.tar.gz"
+    }
 }
 
-REPO = "indygreg/python-build-standalone"
-GITHUB_API_URL = f"https://api.github.com/repos/{REPO}/releases/latest"
-DOWNLOAD_URL_TEMPLATE = (
-    f"https://github.com/{REPO}/releases/download/{{tag}}/cpython-{{version}}+{{tag}}-"
-)
+GITHUB_API_URL = f"https://api.github.com/repos/indygreg/python-build-standalone/releases/latest"
 PYTHON_VERSION_REGEX = re.compile(r"cpython-(\d+\.\d+\.\d+)")
 
 
