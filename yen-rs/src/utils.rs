@@ -33,6 +33,9 @@ pub async fn ensure_python(version: Version) -> miette::Result<(Version, PathBuf
 
     let download_dir = PYTHON_INSTALLS_PATH.join(version.to_string());
 
+    #[cfg(target_os = "windows")]
+    let python_bin_path = download_dir.join("python/python.exe");
+    #[cfg(not(target_os = "windows"))]
     let python_bin_path = download_dir.join("python/bin/python3");
 
     if !download_dir.exists() {
@@ -142,6 +145,12 @@ pub fn detect_target() -> miette::Result<String> {
 
         #[cfg(target_arch = "aarch64")]
         return Ok("aarch64-apple-darwin".into());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        #[cfg(target_arch = "x86_64")]
+        return Ok("x86_64-pc-windows-msvc".into());
     }
 
     miette::bail!("{}-{} is not supported", consts::OS, consts::ARCH);

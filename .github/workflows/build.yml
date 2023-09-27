@@ -1,3 +1,4 @@
+# Taken from https://github.com/prefix-dev/pixi/blob/c32351a/.github/workflows/rust.yml
 name: Build Static Binary
 
 on:
@@ -62,7 +63,6 @@ jobs:
               name: "Linux-aarch64",
               target: aarch64-unknown-linux-musl,
               os: ubuntu-latest,
-              skip-tests: true,
             }
           - {
               name: "macOS-x86_64",
@@ -73,7 +73,11 @@ jobs:
               name: "macOS-aarch64",
               target: aarch64-apple-darwin,
               os: macOS-latest,
-              skip-tests: true,
+            }
+          - {
+              name: "windows-x86_64",
+              target: x86_64-pc-windows-msvc,
+              os: windows-latest,
             }
     env:
       #
@@ -152,12 +156,17 @@ jobs:
         id: bin
         shell: bash
         run: |
+          EXE_SUFFIX=""
+          case ${{ matrix.target }} in
+            *-pc-windows-*) EXE_SUFFIX=".exe" ;;
+          esac;
+
           # Setup paths
           BIN_NAME="${{ needs.crate_metadata.outputs.name }}"
           BIN_PATH="yen-rs/target/${{ matrix.target }}/release/${BIN_NAME}"
 
-          mv $BIN_PATH $BIN_PATH-${{matrix.target}}
-          BIN_PATH=$BIN_PATH-${{matrix.target}}
+          mv "$BIN_PATH${EXE_SUFFIX}" "$BIN_PATH-${{matrix.target}}${EXE_SUFFIX}"
+          BIN_PATH="$BIN_PATH-${{matrix.target}}${EXE_SUFFIX}"
 
           # Let subsequent steps know where to find the binary
           echo "BIN_PATH=${BIN_PATH}" >> $GITHUB_OUTPUT
@@ -175,7 +184,6 @@ jobs:
         with:
           draft: true
           files: |
-            ${{ steps.bin.outputs.PKG_PATH }}
             ${{ steps.bin.outputs.BIN_PATH }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
