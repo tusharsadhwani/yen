@@ -6,9 +6,17 @@ The easiest Python environment manager. Create virtual environments for any Pyth
 
 Get the tool by running the following command:
 
-```bash
-curl -L yen.tushar.lol | sh
-```
+- MacOS / Linux:
+  
+  ```bash
+  curl -L yen.tushar.lol/install.sh | sh
+  ```
+
+- Windows:
+
+  ```cmd
+  curl -L yen.tushar.lol/install.bat | cmd
+  ```
 
 or if you prefer, get it by `pip`:
 
