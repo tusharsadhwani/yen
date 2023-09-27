@@ -62,7 +62,6 @@ jobs:
               name: "Linux-aarch64",
               target: aarch64-unknown-linux-musl,
               os: ubuntu-latest,
-              skip-tests: true,
             }
           - {
               name: "macOS-x86_64",
@@ -73,7 +72,11 @@ jobs:
               name: "macOS-aarch64",
               target: aarch64-apple-darwin,
               os: macOS-latest,
-              skip-tests: true,
+            }
+          - {
+              name: "windows-x86_64",
+              target: x86_64-pc-windows-msvc,
+              os: macOS-latest,
             }
     env:
       #
@@ -175,7 +178,6 @@ jobs:
         with:
           draft: true
           files: |
-            ${{ steps.bin.outputs.PKG_PATH }}
             ${{ steps.bin.outputs.BIN_PATH }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
