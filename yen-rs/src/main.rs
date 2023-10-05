@@ -22,7 +22,12 @@ lazy_static! {
         "https://api.github.com/repos/indygreg/python-build-standalone/releases/latest";
     static ref RE: Regex = Regex::new(r"cpython-(\d+\.\d+.\d+)").expect("Unable to create regex!");
     static ref MUSL: Regex = Regex::new(r"GNU|GLIBC|glibc").expect("Unable to create regex!");
-    static ref PYTHON_INSTALLS_PATH: PathBuf = home_dir().join(".yen_pythons");
+    static ref PYTHON_INSTALLS_PATH: PathBuf = {
+        match std::env::var("YEN_PYTHONS_PATH") {
+            Ok(yen_pythons_path) => PathBuf::from(yen_pythons_path),
+            Err(_) => home_dir().join(".yen_pythons"),
+        }
+    };
     static ref YEN_CLIENT: Client = yen_client();
 }
 
