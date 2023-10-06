@@ -7,7 +7,7 @@ The easiest Python environment manager. Create virtual environments for any Pyth
 Get the tool by running the following command:
 
 - MacOS / Linux:
-  
+
   ```bash
   curl -L yen.tushar.lol/install.sh | sh
   ```
@@ -37,6 +37,9 @@ Available Pythons:
 $ yen create venv -p 3.11
 Downloading 3.11.5 ━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 17.4/17.4 MB • 12.4 MB/s • 0:00:00
 Created venv with Python 3.11.5 ✨
+
+By default the python-installation will be done in ~/.yen_pythons.
+You can change this location by setting a different path using the environment variable `YEN_PYTHONS_PATH`.
 
 $ source venv/bin/activate
 

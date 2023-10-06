@@ -1,4 +1,5 @@
 """yen - Yet another Python environment manager."""
+import os
 import os.path
 import subprocess
 import tarfile
@@ -6,7 +7,7 @@ import tarfile
 from yen.downloader import download
 from yen.github import NotAvailable, resolve_python_version
 
-PYTHON_INSTALLS_PATH = os.path.expanduser("~/.yen_pythons")
+PYTHON_INSTALLS_PATH = os.getenv("YEN_PYTHONS_PATH") or os.path.expanduser("~/.yen_pythons")
 
 
 def ensure_python(python_version: str) -> tuple[str, str]:
