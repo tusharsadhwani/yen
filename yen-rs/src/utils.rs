@@ -88,14 +88,23 @@ pub async fn download(link: &str, path: &Path) -> miette::Result<PathBuf> {
         file.write_all(&chunk).into_diagnostic()?;
         let new = min(downloaded + (chunk.len() as u64), total_size);
         downloaded = new;
-        pb.inc(new/2048);
+        pb.inc(new / 2048);
     }
-    
+
     pb.finish();
 
     let checksum_link = format!("{link}.sha256");
-    let expected_hash = YEN_CLIENT.get(checksum_link).send().await.into_diagnostic()?.text().await.into_diagnostic()?.trim_end().to_owned();
-    
+    let expected_hash = YEN_CLIENT
+        .get(checksum_link)
+        .send()
+        .await
+        .into_diagnostic()?
+        .text()
+        .await
+        .into_diagnostic()?
+        .trim_end()
+        .to_owned();
+
     let bytes = std::fs::read(filepath.clone()).into_diagnostic()?;
     let hash = sha256::digest(bytes).to_string();
 
@@ -105,7 +114,7 @@ pub async fn download(link: &str, path: &Path) -> miette::Result<PathBuf> {
     }
 
     eprintln!("Checksum verified!");
-    
+
     Ok(filepath)
 }
 
