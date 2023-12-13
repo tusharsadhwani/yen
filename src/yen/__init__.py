@@ -53,6 +53,8 @@ def ensure_python(python_version: str) -> tuple[str, str]:
         os.remove(downloaded_filepath)
         raise SystemExit(1)
 
+    print("Checksum matched!")
+
     with tarfile.open(downloaded_filepath, mode="r:gz") as tar:
         tar.extractall(download_directory)
 
