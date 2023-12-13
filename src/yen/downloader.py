@@ -40,7 +40,13 @@ def handle_sigint(signum, frame):
 signal.signal(signal.SIGINT, handle_sigint)
 
 
-def download(url: Iterable[str], display_name: str, directory: str) -> str:
+def read_url(url: str) -> bytes:
+    """Reads the contents of the URL."""
+    response = urlopen(url)
+    return response.read().decode()
+
+
+def download(url: str, display_name: str, directory: str) -> str:
     """Downloads file to the given directory. Returns path to downloaded file."""
     with PROGRESS:
         filename = url.split("/")[-1]
