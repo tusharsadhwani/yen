@@ -33,7 +33,11 @@ pub async fn create_env(
         .into_diagnostic()?;
 
     if !stdout.status.success() {
-        miette::bail!("Error: unable to create venv!");
+        miette::bail!(format!(
+            "Error: unable to create venv!\nStdout: {}\nStderr: {}",
+            String::from_utf8_lossy(&stdout.stdout),
+            String::from_utf8_lossy(&stdout.stderr),
+        ));
     }
 
     eprintln!(

@@ -114,15 +114,32 @@ impl MachineSuffix {
 }
 
 async fn get_latest_python_release() -> miette::Result<Vec<String>> {
-    Ok(YEN_CLIENT
+    let response = YEN_CLIENT
         .get(*GITHUB_API_URL)
         .send()
         .await
-        .into_diagnostic()?
-        .json::<GithubResp>()
-        .await
-        .into_diagnostic()?
-        .into())
+        .into_diagnostic()?;
+
+    // Check if the response status is successful
+    // Log the response body if the status is not successful
+    let success = !response.status().is_success();
+    let body = response.text().await.into_diagnostic()?;
+    if !success {
+        log::error!("Error response: {}", body);
+        miette::bail!("Non-successful API response, check the logs for more info.");
+    }
+
+    // Attempt to parse the JSON
+    let github_resp = match serde_json::from_str::<GithubResp>(&body) {
+        Ok(data) => data,
+        Err(err) => {
+            // Log the error and response body in case of JSON decoding failure
+            log::error!("Error decoding JSON: {}", err);
+            log::error!("Response body: {}", body);
+            miette::bail!("JSON decoding error, check the logs for more info.");
+        }
+    };
+    Ok(github_resp.into())
 }
 
 pub async fn list_pythons() -> miette::Result<BTreeMap<Version, String>> {
