@@ -18,12 +18,12 @@ MACHINE_SUFFIX = {
             "musl": "x86_64_v3-unknown-linux-musl-install_only.tar.gz",
         },
     },
-    "Windows": {
-        "AMD64": "x86_64-pc-windows-msvc-shared-install_only.tar.gz"
-    }
+    "Windows": {"AMD64": "x86_64-pc-windows-msvc-shared-install_only.tar.gz"},
 }
 
-GITHUB_API_URL = f"https://api.github.com/repos/indygreg/python-build-standalone/releases/latest"
+GITHUB_API_URL = (
+    f"https://api.github.com/repos/indygreg/python-build-standalone/releases/latest"
+)
 PYTHON_VERSION_REGEX = re.compile(r"cpython-(\d+\.\d+\.\d+)")
 
 
@@ -74,8 +74,21 @@ def list_pythons() -> dict[str, str]:
     return sorted_python_versions
 
 
-def resolve_python_version(requested_version: str) -> None:
+def _parse_python_version(version: str) -> tuple[int, ...]:
+    return tuple(int(k) for k in version.split("."))
+
+
+def resolve_python_version(requested_version: str | None) -> None:
     pythons = list_pythons()
+
+    if requested_version is None:
+        sorted_pythons = sorted(
+            pythons.items(),
+            key=lambda version_link: _parse_python_version(version_link[0]),
+            reverse=True,
+        )
+        latest_version, download_link = sorted_pythons[0]
+        return latest_version, download_link
 
     for version, version_download_link in pythons.items():
         if version.startswith(requested_version):

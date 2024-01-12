@@ -18,10 +18,14 @@ Get the tool by running the following command:
   curl -L yen.tushar.lol/install.bat | cmd
   ```
 
-or if you prefer, get it by `pip`:
+or if you prefer, get it by `pip` or `pipx`:
 
 ```bash
 pip install yen
+```
+
+```bash
+pipx run yen create -p 3.12
 ```
 
 ## Usage
@@ -29,23 +33,24 @@ pip install yen
 ```console
 $ yen list
 Available Pythons:
-3.11.5
+3.12.1
+3.11.7
 3.10.13
 3.9.18
-3.8.17
+3.8.18
 
-$ yen create venv -p 3.11
-Downloading 3.11.5 ━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 17.4/17.4 MB • 12.4 MB/s • 0:00:00
-Created venv with Python 3.11.5 ✨
-
-By default the python-installation will be done in ~/.yen_pythons.
-You can change this location by setting a different path using the environment variable `YEN_PYTHONS_PATH`.
+$ yen create venv -p 3.12
+Downloading 3.12.1 ━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 17.4/17.4 MB • 12.4 MB/s • 0:00:00
+Created venv with Python 3.12.1 ✨
 
 $ source venv/bin/activate
 
 (venv) $ python --version
-Python 3.11.5
+Python 3.12.1
 ```
+
+> By default the python-installation will be done in ~/.yen_pythons.
+> You can change this location by setting a different path using the environment variable `YEN_PYTHONS_PATH`.
 
 ## Local Development / Testing
 
