@@ -21,10 +21,10 @@ def cli() -> None:
 
     create_parser = subparsers.add_parser("create")
     create_parser.add_argument("venv_path")
-    create_parser.add_argument("-p", "--python")
+    create_parser.add_argument("-p", "--python", required=True)
 
     create_parser = subparsers.add_parser("use")
-    create_parser.add_argument("-p", "--python")
+    create_parser.add_argument("-p", "--python", required=True)
 
     args = parser.parse_args(namespace=YenArgs)
 
