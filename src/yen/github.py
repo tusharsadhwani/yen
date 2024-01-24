@@ -1,6 +1,9 @@
 import json
+import os.path
 import platform
 import re
+import urllib.error
+from typing import Any
 from urllib.request import urlopen
 
 MACHINE_SUFFIX = {
@@ -22,9 +25,17 @@ MACHINE_SUFFIX = {
 }
 
 GITHUB_API_URL = (
-    f"https://api.github.com/repos/indygreg/python-build-standalone/releases/latest"
+    "https://api.github.com/repos/indygreg/python-build-standalone/releases/latest"
 )
 PYTHON_VERSION_REGEX = re.compile(r"cpython-(\d+\.\d+\.\d+)")
+
+
+def fallback_release_data() -> dict[str, Any]:
+    """Returns the fallback release data, for when GitHub API gives an error."""
+    print("\033[33mWarning: GitHub unreachable. Using fallback release data.\033[m")
+    data_file = os.path.join(os.path.dirname(__file__), "fallback_release_data.json")
+    with open(data_file) as data:
+        return json.load(data)
 
 
 class NotAvailable(Exception):
@@ -33,8 +44,13 @@ class NotAvailable(Exception):
 
 def get_latest_python_releases() -> list[str]:
     """Returns the list of python download links from the latest github release."""
-    with urlopen(GITHUB_API_URL) as response:
-        release_data = json.load(response)
+    try:
+        with urlopen(GITHUB_API_URL) as response:
+            release_data = json.load(response)
+
+    except urllib.error.URLError:
+        # raise
+        release_data = fallback_release_data()
 
     return [asset["browser_download_url"] for asset in release_data["assets"]]
 

@@ -48,7 +48,7 @@ def ensure_python(python_version: str) -> tuple[str, str]:
         # already installed
         return python_version, python_bin_path
 
-    os.makedirs(download_directory)
+    os.makedirs(download_directory, exist_ok=True)
     downloaded_filepath = download(
         download_link,
         f"Downloading {python_version}",
