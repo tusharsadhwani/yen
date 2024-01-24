@@ -113,6 +113,8 @@ impl MachineSuffix {
     }
 }
 
+const FALLBACK_RESPONSE_BYTES: &[u8] = include_bytes!("../../src/yen/fallback_release_data.json");
+
 async fn get_latest_python_release() -> miette::Result<Vec<String>> {
     let response = YEN_CLIENT
         .get(*GITHUB_API_URL)
@@ -124,10 +126,11 @@ async fn get_latest_python_release() -> miette::Result<Vec<String>> {
     // Log the response body if the status is not successful
     let status_code = response.status().as_u16();
     let success = response.status().is_success();
-    let body = response.text().await.into_diagnostic()?;
+    let mut body = response.text().await.into_diagnostic()?;
     if !success {
         log::error!("Error response: {}\nStatus Code: {}", body, status_code);
-        miette::bail!("Non-successful API response, check the logs for more info.");
+        let fallback_response = String::from_utf8_lossy(FALLBACK_RESPONSE_BYTES).into_owned();
+        body = fallback_response;
     }
 
     // Attempt to parse the JSON
