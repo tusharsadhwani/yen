@@ -1,5 +1,7 @@
 """Taken from https://github.com/textualize/rich/blob/ec91917/examples/downloader.py"""
 
+from __future__ import annotations
+
 import os.path
 import signal
 from functools import partial

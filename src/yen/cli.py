@@ -1,4 +1,7 @@
 """CLI interface for yen."""
+
+from __future__ import annotations
+
 import argparse
 from typing import Literal
 
