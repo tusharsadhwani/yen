@@ -33,14 +33,7 @@ def ensure_python(python_version: str) -> tuple[str, str]:
     """Checks if given Python version exists locally. If not, downloads it."""
     os.makedirs(PYTHON_INSTALLS_PATH, exist_ok=True)
 
-    try:
-        python_version, download_link = resolve_python_version(python_version)
-    except NotAvailable:
-        print(
-            "Error: requested Python version is not available."
-            " Use 'yen list' to get list of available Pythons."
-        )
-
+    python_version, download_link = resolve_python_version(python_version)
     download_directory = os.path.join(PYTHON_INSTALLS_PATH, python_version)
 
     if os.name == "nt":

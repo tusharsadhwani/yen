@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from typing import Literal
 
-from yen import create_symlink, ensure_python, create_venv
+from yen import NotAvailable, create_symlink, create_venv, ensure_python
 from yen.github import list_pythons
 
 
@@ -15,7 +15,7 @@ class YenArgs:
     venv_path: str
 
 
-def cli() -> None:
+def cli() -> int:
     """CLI interface."""
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -38,9 +38,26 @@ def cli() -> None:
             print(version)
 
     elif args.command == "create":
-        python_version, python_bin_path = ensure_python(args.python)
-        create_venv(python_version, python_bin_path, args.venv_path)
+        try:
+            python_version, python_bin_path = ensure_python(args.python)
+            create_venv(python_version, python_bin_path, args.venv_path)
+        except NotAvailable:
+            print(
+                "Error: requested Python version is not available."
+                " Use 'yen list' to get list of available Pythons."
+            )
+            return 1
+
 
     elif args.command == "use":
-        python_version, python_bin_path = ensure_python(args.python)
-        create_symlink(python_bin_path, python_version)
+        try:
+            python_version, python_bin_path = ensure_python(args.python)
+            create_symlink(python_bin_path, python_version)
+        except NotAvailable:
+            print(
+                "Error: requested Python version is not available."
+                " Use 'yen list' to get list of available Pythons."
+            )
+            return 1
+
+    return 0
