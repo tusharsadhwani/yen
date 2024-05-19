@@ -14,8 +14,14 @@ Get the tool by running the following command:
 
 - Windows:
 
+  Using cmd:
   ```cmd
   curl -L yen.tushar.lol/install.bat | cmd
+  ```
+
+  or using Powershell:
+  ```pwsh
+  curl -L yen.tushar.lol/install.ps1 | Invoke-Expression
   ```
 
 or if you prefer, get it by `pip` or `pipx`:
