@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from typing import Literal
 
-from yen import NotAvailable, create_symlink, create_venv, ensure_python
-from yen.github import list_pythons
+from yen import create_symlink, create_venv, ensure_python
+from yen.github import NotAvailable, list_pythons
 
 
 class YenArgs:
@@ -33,7 +34,7 @@ def cli() -> int:
 
     if args.command == "list":
         versions = list(list_pythons())
-        print("Available Pythons:")
+        print("Available Pythons:", file=sys.stderr)
         for version in versions:
             print(version)
 
@@ -44,10 +45,10 @@ def cli() -> int:
         except NotAvailable:
             print(
                 "Error: requested Python version is not available."
-                " Use 'yen list' to get list of available Pythons."
+                " Use 'yen list' to get list of available Pythons.",
+                file=sys.stderr,
             )
             return 1
-
 
     elif args.command == "use":
         try:

@@ -8,7 +8,7 @@ pub struct Args;
 
 pub async fn execute(_args: Args) -> miette::Result<()> {
     let pythons = list_pythons().await?;
-    println!("Available Pythons:");
+    eprintln!("Available Pythons:");
     for v in pythons.keys().rev() {
         println!("{v}");
     }
