@@ -89,14 +89,17 @@ pub enum MachineSuffix {
 }
 
 impl MachineSuffix {
-    fn get_suffix(&self) -> String {
+    fn get_suffixes(&self) -> Vec<String> {
         match self {
-            Self::DarwinArm64 => "aarch64-apple-darwin-install_only.tar.gz".into(),
-            Self::DarwinX64 => "x86_64-apple-darwin-install_only.tar.gz".into(),
-            Self::LinuxAarch64 => "aarch64-unknown-linux-gnu-install_only.tar.gz".into(),
-            Self::LinuxX64GlibC => "x86_64_v3-unknown-linux-gnu-install_only.tar.gz".into(),
-            Self::LinuxX64Musl => "x86_64_v3-unknown-linux-musl-install_only.tar.gz".into(),
-            Self::WindowsX64 => "x86_64-pc-windows-msvc-shared-install_only.tar.gz".into(),
+            Self::DarwinArm64 => vec!["aarch64-apple-darwin-install_only.tar.gz".into()],
+            Self::DarwinX64 => vec!["x86_64-apple-darwin-install_only.tar.gz".into()],
+            Self::LinuxAarch64 => vec!["aarch64-unknown-linux-gnu-install_only.tar.gz".into()],
+            Self::LinuxX64GlibC => vec![
+                "x86_64_v3-unknown-linux-gnu-install_only.tar.gz".into(),
+                "x86_64-unknown-linux-gnu-install_only.tar.gz".into(),
+            ],
+            Self::LinuxX64Musl => vec!["x86_64_v3-unknown-linux-musl-install_only.tar.gz".into()],
+            Self::WindowsX64 => vec!["x86_64-pc-windows-msvc-shared-install_only.tar.gz".into()],
         }
     }
 
@@ -147,18 +150,22 @@ async fn get_latest_python_release() -> miette::Result<Vec<String>> {
 }
 
 pub async fn list_pythons() -> miette::Result<BTreeMap<Version, String>> {
-    let machine_suffix = MachineSuffix::default().await?.get_suffix();
+    let machine_suffixes = MachineSuffix::default().await?.get_suffixes();
 
     let releases = get_latest_python_release().await?;
 
     let mut map = BTreeMap::new();
 
     for release in releases {
-        if release.ends_with(&machine_suffix) {
-            let x = (*RE).captures(&release);
-            if let Some(v) = x {
-                let version = Version::from_str(&v[1])?;
-                map.insert(version, release);
+        for ref machine_suffix in machine_suffixes.iter() {
+            if release.ends_with(*machine_suffix) {
+                let x = (*RE).captures(&release);
+                if let Some(v) = x {
+                    let version = Version::from_str(&v[1])?;
+                    map.insert(version, release.clone());
+                    // Only keep the first match from machine suffixes
+                    break;
+                }
             }
         }
     }

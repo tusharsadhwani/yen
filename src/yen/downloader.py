@@ -35,14 +35,14 @@ PROGRESS = Progress(
 DONE = Event()
 
 
-def handle_sigint(signum, frame):
+def handle_sigint(_: object, __: object) -> None:
     DONE.set()
 
 
 signal.signal(signal.SIGINT, handle_sigint)
 
 
-def read_url(url: str) -> bytes:
+def read_url(url: str) -> str:
     """Reads the contents of the URL."""
     response = urlopen(url)
     return response.read().decode()
