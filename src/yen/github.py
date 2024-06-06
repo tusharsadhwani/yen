@@ -31,7 +31,7 @@ MACHINE_SUFFIX = {
             ],
         },
     },
-    "Windows": {"AMD64": "x86_64-pc-windows-msvc-shared-install_only.tar.gz"},
+    "Windows": {"AMD64": ["x86_64-pc-windows-msvc-shared-install_only.tar.gz"]},
 }
 
 GITHUB_API_RELEASES_URL = (
