@@ -1630,7 +1630,7 @@ dependencies = [
 
 [[package]]
 name = "yen-rs"
-version = "0.4.2"
+version = "0.4.4"
 dependencies = [
  "clap",
  "clap-verbosity-flag",
