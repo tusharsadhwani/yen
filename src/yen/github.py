@@ -25,10 +25,7 @@ MACHINE_SUFFIX = {
                 "x86_64_v3-unknown-linux-gnu-install_only.tar.gz",
                 "x86_64-unknown-linux-gnu-install_only.tar.gz",
             ],
-            "musl": [
-                "x86_64_v3-unknown-linux-musl-install_only.tar.gz",
-                "x86_64-unknown-linux-gnu-install_only.tar.gz",
-            ],
+            "musl": ["x86_64_v3-unknown-linux-musl-install_only.tar.gz"],
         },
     },
     "Windows": {"AMD64": ["x86_64-pc-windows-msvc-shared-install_only.tar.gz"]},
