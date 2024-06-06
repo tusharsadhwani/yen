@@ -174,7 +174,7 @@ jobs:
 
       - name: Run the binary
         run: |
-          ${{ steps.bin.outputs.BIN_PATH }} list
+          ${{ steps.bin.outputs.BIN_PATH }} list >> $GITHUB_STEP_SUMMARY
 
       - name: "Artifact upload: binary"
         uses: actions/upload-artifact@master
