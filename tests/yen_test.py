@@ -36,7 +36,9 @@ parametrize_python_and_rust_path = pytest.mark.parametrize(("yen_path",), yen_pa
 
 def run(command: list[str]) -> str:
     try:
-        output = subprocess.check_output(command, stderr=subprocess.STDOUT).decode()
+        output = subprocess.check_output(command, stderr=subprocess.STDOUT).decode(
+            errors="ignore"
+        )
     except subprocess.CalledProcessError as exc:
         print(f"Subprocess output: {exc.output.decode(errors='ignore')}")
         raise
