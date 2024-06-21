@@ -57,7 +57,8 @@ def test_yen_list(yen_path: str) -> None:
 def test_yen_create(yen_path: str) -> None:
     try:
         output = subprocess.check_output(
-            [yen_path, "create", "-p3.11", "testvenv"]
+            [yen_path, "create", "-p3.11", "testvenv"],
+            stderr=subprocess.STDOUT,
         ).decode()
         assert "Created" in output
         assert "testvenv" in output
