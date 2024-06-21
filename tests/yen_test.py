@@ -11,27 +11,22 @@ def is_in_venv() -> bool:
     bin_folder = os.path.dirname(sys.executable)
     bin_parent_folder = os.path.dirname(bin_folder)
     if platform.system() == "Windows":
-        return (
-            os.path.basename(bin_folder) == "Scripts"
-            and os.path.basename(bin_parent_folder) == "venv"
+        return os.path.basename(bin_folder) == "Scripts" and os.path.isfile(
+            os.path.join(bin_parent_folder, "pyvenv.cfg")
         )
 
-    return (
-        os.path.basename(bin_folder) == "bin"
-        and os.path.basename(bin_parent_folder) == "venv"
+    return os.path.basename(bin_folder) == "bin" and os.path.isfile(
+        os.path.join(bin_parent_folder, "pyvenv.cfg")
     )
 
 
 def parametrize_python_and_rust_path() -> Any:
     yen_paths: list[str] = []
-    if "YEN_PYTHON_BINARY_PATH" in os.environ:
-        yen_python_path = os.getenv("YEN_PYTHON_BINARY_PATH")
-    else:
-        assert is_in_venv(), "Ensure you're in a 'venv' virtual environment, or provide YEN_PYTHON_BINARY_PATH"
-        yen_python_path = os.path.join(
-            os.path.dirname(sys.executable),
-            "yen.exe" if platform.system() == "Windows" else "yen",
-        )
+    assert is_in_venv()
+    yen_python_path = os.path.join(
+        os.path.dirname(sys.executable),
+        "yen.exe" if platform.system() == "Windows" else "yen",
+    )
 
     yen_paths.append((yen_python_path,))
     return pytest.mark.parametrize(("yen_path",), yen_paths)
