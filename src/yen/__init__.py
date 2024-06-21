@@ -77,7 +77,7 @@ def create_venv(python_version: str, python_bin_path: str, venv_path: str) -> No
         raise SystemExit(2)
 
     subprocess.run([python_bin_path, "-m", "venv", venv_path], check=True)
-    print(f"Created \033[1m{venv_path}\033[m with Python {python_version} ✨")
+    print(f"Created \033[1m{venv_path}\033[m with Python {python_version} ✨".encode())
 
 
 def create_symlink(python_bin_path: str, python_version: str) -> None:
