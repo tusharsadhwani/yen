@@ -12,7 +12,7 @@ import pytest
 def is_in_venv() -> bool:
     bin_folder = os.path.dirname(sys.executable)
     bin_parent_folder = os.path.dirname(bin_folder)
-    assert os.path.isfile(os.path.join(bin_parent_folder, "pyvenv.cfg"))
+    return os.path.isfile(os.path.join(bin_parent_folder, "pyvenv.cfg"))
 
 
 def yen_python_and_rust_path() -> list[str]:
