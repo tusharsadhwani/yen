@@ -16,7 +16,7 @@ def is_in_venv() -> bool:
 
 
 def yen_python_and_rust_path() -> list[str]:
-    yen_paths: list[str] = []
+    yen_paths: list[tuple[str]] = []
     assert is_in_venv()
     yen_python_path = os.path.join(
         os.path.dirname(sys.executable),

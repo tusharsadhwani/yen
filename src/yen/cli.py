@@ -77,7 +77,7 @@ def cli() -> int:
             return 1
 
         # TODO: add yaspin?
-        already_installed = install_package(args.package_name, python_bin_path)
+        _, already_installed = install_package(args.package_name, python_bin_path)
         if already_installed:
             print(f"Package \033[1m{args.package_name}\033[m is already installed.")
         else:

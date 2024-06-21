@@ -79,11 +79,15 @@ def ensure_python(python_version: str) -> tuple[str, str]:
 
 def create_venv(python_bin_path: str, venv_path: str, exists_ok: bool = False) -> bool:
     """if `exist_ok` is True, Returns False if venv already existed."""
-    if os.path.exists(venv_path) and not exists_ok:
-        print(f"\033[1;31mError:\033[m {venv_path} already exists.")
-        raise SystemExit(2)
+    if os.path.exists(venv_path):
+        if exists_ok:
+            return False
+        else:
+            print(f"\033[1;31mError:\033[m {venv_path} already exists.")
+            raise SystemExit(2)
 
     subprocess.run([python_bin_path, "-m", "venv", venv_path], check=True)
+    return True
 
 
 def _venv_binary_path(binary_name: str, venv_path: str) -> str:
