@@ -2,7 +2,6 @@ import os.path
 import platform
 import subprocess
 import sys
-from typing import Any
 
 import pytest
 
@@ -20,7 +19,7 @@ def is_in_venv() -> bool:
     )
 
 
-def parametrize_python_and_rust_path() -> Any:
+def yen_python_and_rust_path() -> list[str]:
     yen_paths: list[str] = []
     assert is_in_venv()
     yen_python_path = os.path.join(
@@ -29,10 +28,17 @@ def parametrize_python_and_rust_path() -> Any:
     )
 
     yen_paths.append((yen_python_path,))
-    return pytest.mark.parametrize(("yen_path",), yen_paths)
+    if yen_rust_path := os.getenv("YEN_RUST_PATH"):
+        yen_paths.append((yen_rust_path,))
+
+    return yen_paths
 
 
-@parametrize_python_and_rust_path()
+yen_paths = yen_python_and_rust_path()
+parametrize_python_and_rust_path = pytest.mark.parametrize(("yen_path",), yen_paths)
+
+
+@parametrize_python_and_rust_path
 def test_yen_list(yen_path: str) -> None:
     yen_output = subprocess.check_output(
         [yen_path, "list"],
@@ -44,6 +50,6 @@ def test_yen_list(yen_path: str) -> None:
     assert "\n3.9." in yen_output
 
 
-@parametrize_python_and_rust_path()
+@parametrize_python_and_rust_path
 def test_yen_create(yen_path: str) -> None:
     pass  # TODO

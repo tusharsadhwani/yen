@@ -184,7 +184,9 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
-          ...
+          python -m venv venv
+          ./venv/bin/pip install -r requirements-dev.txt
+          YEN_RUST_PATH=${{ steps.bin.outputs.BIN_PATH }} ./venv/bin/pytest
 
       - name: "Artifact upload: binary"
         uses: actions/upload-artifact@master
