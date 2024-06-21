@@ -13,6 +13,7 @@ def is_in_venv() -> bool:
     bin_folder = os.path.dirname(sys.executable)
     bin_parent_folder = os.path.dirname(bin_folder)
     if platform.system() == "Windows":
+        print(os.listdir(bin_folder), os.listdir(bin_parent_folder))
         return os.path.basename(bin_folder) == "Scripts" and os.path.isfile(
             os.path.join(bin_parent_folder, "pyvenv.cfg")
         )
