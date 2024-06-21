@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os.path
 import platform
+import shutil
 import subprocess
 import sys
 
@@ -42,16 +43,24 @@ parametrize_python_and_rust_path = pytest.mark.parametrize(("yen_path",), yen_pa
 
 @parametrize_python_and_rust_path
 def test_yen_list(yen_path: str) -> None:
-    yen_output = subprocess.check_output(
+    output = subprocess.check_output(
         [yen_path, "list"],
         stderr=subprocess.STDOUT,
     ).decode()
-    assert "\n3.12." in yen_output
-    assert "\n3.11." in yen_output
-    assert "\n3.10." in yen_output
-    assert "\n3.9." in yen_output
+    assert "\n3.12." in output
+    assert "\n3.11." in output
+    assert "\n3.10." in output
+    assert "\n3.9." in output
 
 
 @parametrize_python_and_rust_path
 def test_yen_create(yen_path: str) -> None:
-    pass  # TODO
+    try:
+        output = subprocess.check_output(
+            [yen_path, "create", "-p3.11", "testvenv"]
+        ).decode()
+        assert "Created" in output
+        assert "testvenv" in output
+        assert "Python 3.11" in output
+    finally:
+        shutil.rmtree("testvenv", ignore_errors=True)
