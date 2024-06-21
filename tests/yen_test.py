@@ -34,12 +34,19 @@ yen_paths = yen_python_and_rust_path()
 parametrize_python_and_rust_path = pytest.mark.parametrize(("yen_path",), yen_paths)
 
 
+def run(command: list[str]) -> str:
+    try:
+        output = subprocess.check_output(command, stderr=subprocess.STDOUT).decode()
+    except subprocess.CalledProcessError as exc:
+        print(f"Subprocess output: {exc.output}")
+        raise
+
+    return output
+
+
 @parametrize_python_and_rust_path
 def test_yen_list(yen_path: str) -> None:
-    output = subprocess.check_output(
-        [yen_path, "list"],
-        stderr=subprocess.STDOUT,
-    ).decode()
+    output = run([yen_path, "list"])
     assert "\n3.12." in output
     assert "\n3.11." in output
     assert "\n3.10." in output
@@ -49,10 +56,7 @@ def test_yen_list(yen_path: str) -> None:
 @parametrize_python_and_rust_path
 def test_yen_create(yen_path: str) -> None:
     try:
-        output = subprocess.check_output(
-            [yen_path, "create", "-p3.11", "testvenv"],
-            stderr=subprocess.STDOUT,
-        ).decode()
+        output = run([yen_path, "create", "-p3.11", "testvenv"])
         assert "Created" in output
         assert "testvenv" in output
         assert "Python 3.11" in output
