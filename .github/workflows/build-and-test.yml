@@ -1,5 +1,5 @@
 # Taken from https://github.com/prefix-dev/pixi/blob/c32351a/.github/workflows/rust.yml
-name: Build Static Binary
+name: Build and Test Static Binary
 
 on:
   push:
@@ -99,6 +99,10 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v3
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
+
       - name: Install Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -176,6 +180,11 @@ jobs:
         shell: bash
         run: |
           ${{ steps.bin.outputs.BIN_PATH }} list &>> $GITHUB_STEP_SUMMARY
+
+      - name: Run tests
+        shell: bash
+        run: |
+          ...
 
       - name: "Artifact upload: binary"
         uses: actions/upload-artifact@master
