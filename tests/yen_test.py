@@ -38,7 +38,7 @@ def run(command: list[str]) -> str:
     try:
         output = subprocess.check_output(command, stderr=subprocess.STDOUT).decode()
     except subprocess.CalledProcessError as exc:
-        print(f"Subprocess output: {exc.output}")
+        print(f"Subprocess output: {exc.output.decode(errors="ignore")}")
         raise
 
     return output
