@@ -58,6 +58,12 @@ Python 3.12.1
 - Run `pip install -r requirements-dev.txt` to do an editable install
 - Run `pytest` to run tests
 
+To run rust tests:
+
+- Compile the rust project: `cd yen-rs && cargo build`
+- Add `yen-rs` to `PATH`: `export YEN_RUST_PATH=./yen-rs/target/debug/yen-rs`
+- Run `pytest`, and ensure that number of tests ran has doubled.
+
 ## Type Checking
 
 Run `mypy .`
