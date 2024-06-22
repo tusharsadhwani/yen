@@ -10,6 +10,9 @@ from yen import create_symlink, create_venv, ensure_python, install_package, run
 from yen.github import NotAvailable, list_pythons
 
 
+sys.stdout.encoding = "utf-8"
+
+
 class YenArgs:
     command: Literal["list", "create", "install", "run", "use"]
     python: str
