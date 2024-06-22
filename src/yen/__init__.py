@@ -112,7 +112,11 @@ def install_package(package_name: str, python_bin_path: str) -> tuple[str, bool]
         return venv_path, True  # True as in already existed
 
     venv_python_path = _venv_binary_path("python", venv_path)
-    subprocess.run([venv_python_path, "-m", "pip", "install", package_name], check=True)
+    subprocess.run(
+        [venv_python_path, "-m", "pip", "install", package_name],
+        check=True,
+        capture_output=True,
+    )
     package_bin_path = _venv_binary_path(package_name, venv_path)
     os.symlink(package_bin_path, os.path.join(PACKAGE_INSTALLS_PATH, package_name))
 
