@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import os.path
 import sys
 from typing import Literal
 
+import yen
 from yen import create_symlink, create_venv, ensure_python, install_package, run_package
 from yen.github import NotAvailable, list_pythons
 
@@ -15,6 +17,9 @@ class YenArgs:
     python: str
     venv_path: str
     package_name: str
+    binary: str | None
+    module: str | None
+    force_reinstall: bool
     command_args: list[str]
 
 
@@ -26,17 +31,39 @@ def cli() -> int:
     subparsers.add_parser("list")
 
     create_parser = subparsers.add_parser("create")
-    create_parser.add_argument("venv_path")
+    create_parser.add_argument("venv_path", type=os.path.abspath)
     create_parser.add_argument("-p", "--python", required=True)
 
     install_parser = subparsers.add_parser("install")
     install_parser.add_argument("package_name")
     install_parser.add_argument("-p", "--python", default="3.12")
+    install_parser.add_argument(
+        "--binary",
+        help="Name of command installed by package. Defaults to package name itself.",
+    )
+    install_parser.add_argument(
+        "--module",
+        help="Use if package should be run as a module, i.e. `python -m <module_name>`",
+    )
+    install_parser.add_argument("--force-reinstall", action="store_true")
 
     run_parser = subparsers.add_parser("run")
     run_parser.add_argument("package_name")
     run_parser.add_argument("-p", "--python", default="3.12")
-    run_parser.add_argument("command_args", nargs="+")
+    run_parser.add_argument(
+        "command_args",
+        help="Arguments to pass to the command invocation",
+        nargs="*",
+    )
+    run_parser.add_argument(
+        "--binary",
+        help="Name of command installed by package. Defaults to package name itself.",
+    )
+    run_parser.add_argument(
+        "--module",
+        help="Use if package should be run as a module, i.e. `python -m <module_name>`",
+    )
+    run_parser.add_argument("--force-reinstall", action="store_true")
 
     use_parser = subparsers.add_parser("use")
     use_parser.add_argument("-p", "--python", required=True)
@@ -60,10 +87,12 @@ def cli() -> int:
             )
             return 1
 
+        if os.path.exists(args.venv_path):
+            print(f"\033[1;31mError:\033[m {args.venv_path} already exists.")
+            return 2
+
         create_venv(python_bin_path, args.venv_path)
-        print(
-            f"Created \033[1m{args.venv_path}\033[m" f" with Python {python_version} ✨"
-        )
+        print(f"Created \033[1m{args.venv_path}\033[m with Python {python_version} ✨")
 
     elif args.command == "install":
         try:
@@ -76,8 +105,32 @@ def cli() -> int:
             )
             return 1
 
+        if args.module is not None and args.binary is not None:
+            print(
+                "Error: cannot pass `--binary-name` and `--module-name` together.",
+                file=sys.stderr,
+            )
+            return 1
+
         # TODO: add yaspin?
-        _, already_installed = install_package(args.package_name, python_bin_path)
+        executable_name = args.module or args.binary or args.package_name
+        is_module = args.module is not None
+        try:
+            already_installed = install_package(
+                args.package_name,
+                python_bin_path,
+                executable_name,
+                is_module=is_module,
+                force_reinstall=args.force_reinstall,
+            )
+        except yen.ExecutableDoesNotExist:
+            print(
+                f"Error: package {args.package_name} doesn't contain a binary named"
+                f" {executable_name}. Consider passing `--binary` or `--module` flags.",
+                file=sys.stderr,
+            )
+            return 4
+
         if already_installed:
             print(f"Package \033[1m{args.package_name}\033[m is already installed.")
         else:
@@ -97,9 +150,33 @@ def cli() -> int:
             )
             return 1
 
+        if args.module is not None and args.binary is not None:
+            print(
+                "Error: cannot pass `--binary-name` and `--module-name` together.",
+                file=sys.stderr,
+            )
+            return 1
+
         # TODO: add yaspin?
-        venv_path, _ = install_package(args.package_name, python_bin_path)
-        run_package(args.package_name, venv_path, args.command_args)
+        executable_name = args.module or args.binary or args.package_name
+        is_module = args.module is not None
+        try:
+            already_installed = install_package(
+                args.package_name,
+                python_bin_path,
+                executable_name,
+                is_module=is_module,
+                force_reinstall=args.force_reinstall,
+            )
+        except yen.ExecutableDoesNotExist:
+            print(
+                f"Error: package {args.package_name} doesn't contain a binary named"
+                f" {executable_name}. Consider passing `--binary` or `--module` flags.",
+                file=sys.stderr,
+            )
+            return 4
+
+        run_package(args.package_name, args.command_args)
 
     elif args.command == "use":
         try:

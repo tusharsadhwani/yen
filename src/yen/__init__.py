@@ -6,6 +6,7 @@ import hashlib
 import os
 import os.path
 import platform
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -13,12 +14,15 @@ import tarfile
 from yen.downloader import download, read_url
 from yen.github import resolve_python_version
 
-PYTHON_INSTALLS_PATH = os.getenv(
-    "YEN_PYTHONS_PATH", os.path.expanduser("~/.yen_pythons")
+PYTHON_INSTALLS_PATH = os.path.abspath(
+    os.getenv("YEN_PYTHONS_PATH", os.path.expanduser("~/.yen_pythons"))
 )
-PACKAGE_INSTALLS_PATH = os.getenv(
-    "YEN_PACKAGES_PATH", os.path.expanduser("~/.yen_packages")
+PACKAGE_INSTALLS_PATH = os.path.abspath(
+    os.getenv("YEN_PACKAGES_PATH", os.path.expanduser("~/.yen_packages"))
 )
+
+
+class ExecutableDoesNotExist(Exception): ...
 
 
 def check_path(path: str) -> None:
@@ -77,17 +81,10 @@ def ensure_python(python_version: str) -> tuple[str, str]:
     return python_version, python_bin_path
 
 
-def create_venv(python_bin_path: str, venv_path: str, exists_ok: bool = False) -> bool:
-    """if `exist_ok` is True, Returns False if venv already existed."""
-    if os.path.exists(venv_path):
-        if exists_ok:
-            return False
-        else:
-            print(f"\033[1;31mError:\033[m {venv_path} already exists.")
-            raise SystemExit(2)
-
+def create_venv(python_bin_path: str, venv_path: str) -> None:
+    # TODO: bundle microvenv.pyz as a dependency, venv is genuinely too slow
+    # microvenv doesn't support windows, fallback to venv for that. teehee.
     subprocess.run([python_bin_path, "-m", "venv", venv_path], check=True)
-    return True
 
 
 def _venv_binary_path(binary_name: str, venv_path: str) -> str:
@@ -99,17 +96,25 @@ def _venv_binary_path(binary_name: str, venv_path: str) -> str:
     return binary_path
 
 
-def install_package(package_name: str, python_bin_path: str) -> tuple[str, bool]:
-    # TODO: add `force` arg to manually remove the venv if it exists
-    # TODO: add `--spec` equivalent from pipx
-    # TODO: maybe add a `--module` flag that runs it as `python -m package_name` instead
+def install_package(
+    package_name: str,
+    python_bin_path: str,
+    executable_name: str,
+    *,
+    is_module: bool,
+    force_reinstall: bool,
+) -> bool:
     os.makedirs(PACKAGE_INSTALLS_PATH, exist_ok=True)
+
     venv_name = f"venv_{package_name}"
     venv_path = os.path.join(PACKAGE_INSTALLS_PATH, venv_name)
-    venv_created = create_venv(python_bin_path, venv_path, exists_ok=True)
+    if os.path.exists(venv_path):
+        if not force_reinstall:
+            return True  # True as in package already existed
+        else:
+            shutil.rmtree(venv_path)
 
-    if not venv_created:
-        return venv_path, True  # True as in already existed
+    create_venv(python_bin_path, venv_path)
 
     venv_python_path = _venv_binary_path("python", venv_path)
     subprocess.run(
@@ -117,18 +122,30 @@ def install_package(package_name: str, python_bin_path: str) -> tuple[str, bool]
         check=True,
         capture_output=True,
     )
-    package_bin_path = _venv_binary_path(package_name, venv_path)
-    os.symlink(package_bin_path, os.path.join(PACKAGE_INSTALLS_PATH, package_name))
+
+    shim_path = os.path.join(PACKAGE_INSTALLS_PATH, package_name)
+    if is_module:
+        # TODO: won't work on windows? create a batch or ps1 file i guess?
+        with open(shim_path, "w") as file:
+            file.write(f"{venv_python_path} -m {package_name}")
+
+        os.chmod(shim_path, 0o777)
+    else:
+        executable_path = _venv_binary_path(executable_name, venv_path)
+        if not os.path.exists(executable_path):
+            # cleanup the venv created
+            shutil.rmtree(venv_path)
+            raise ExecutableDoesNotExist
+
+        os.symlink(executable_path, shim_path)
 
     check_path(PACKAGE_INSTALLS_PATH)
-    return venv_path, False
+    return False  # False as in package didn't exist and was just installed
 
 
-def run_package(package_name: str, venv_path: str, args: list[str]) -> None:
-    # TODO: add `--spec` equivalent from pipx
-    # TODO: maybe add a `--module` flag that runs it as `python -m package_name` instead
-    package_bin_path = _venv_binary_path(package_name, venv_path)
-    subprocess.run([package_bin_path, *args])
+def run_package(package_name: str, command_args: list[str]) -> None:
+    shim_path = os.path.join(PACKAGE_INSTALLS_PATH, package_name)
+    subprocess.run([shim_path, *command_args], shell=True)
 
 
 def create_symlink(python_bin_path: str, python_version: str) -> None:
