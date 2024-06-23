@@ -20,7 +20,7 @@ class YenArgs:
     binary: str | None
     module: str | None
     force_reinstall: bool
-    command_args: list[str]
+    run_args: list[str]
 
 
 def cli() -> int:
@@ -51,9 +51,11 @@ def cli() -> int:
     run_parser.add_argument("package_name")
     run_parser.add_argument("-p", "--python", default="3.12")
     run_parser.add_argument(
-        "command_args",
+        "--args",
+        dest="run_args",
         help="Arguments to pass to the command invocation",
         nargs="*",
+        default=(),
     )
     run_parser.add_argument(
         "--binary",
@@ -176,7 +178,7 @@ def cli() -> int:
             )
             return 4
 
-        run_package(args.package_name, args.command_args)
+        run_package(args.package_name, args.run_args)
 
     elif args.command == "use":
         try:

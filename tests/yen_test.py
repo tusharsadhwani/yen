@@ -5,8 +5,21 @@ import platform
 import shutil
 import subprocess
 import sys
+from textwrap import dedent
+from typing import Iterator
 
 import pytest
+
+
+PACKAGES_INSTALL_PATH = os.path.join(os.path.dirname(__file__), "yen_packages")
+
+
+@pytest.fixture(autouse=True)
+def patch_yen_packages_path(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    """Ensures that YEN_PACKAGES_PATH is set up correctly and cleaned up."""
+    monkeypatch.setenv("YEN_PACKAGES_PATH", PACKAGES_INSTALL_PATH)
+    yield
+    shutil.rmtree(PACKAGES_INSTALL_PATH, ignore_errors=True)
 
 
 def is_in_venv() -> bool:
@@ -34,13 +47,20 @@ yen_paths = yen_python_and_rust_path()
 parametrize_python_and_rust_path = pytest.mark.parametrize(("yen_path",), yen_paths)
 
 
-def run(command: list[str]) -> str:
+def run(
+    command: list[str],
+    *,
+    combined_output: bool = False,
+    env: dict[str, str] | None = None,
+) -> str:
     try:
-        output = subprocess.check_output(command, stderr=subprocess.STDOUT).decode(
-            errors="ignore"
-        )
+        output = subprocess.check_output(
+            command,
+            stderr=subprocess.STDOUT if combined_output else None,
+            env=env,
+        ).decode(errors="replace")
     except subprocess.CalledProcessError as exc:
-        print(f"Subprocess output: {exc.output.decode(errors='ignore')}")
+        print(f"Subprocess output: {exc.output.decode(errors='replace')}")
         raise
 
     return output
@@ -48,7 +68,8 @@ def run(command: list[str]) -> str:
 
 @parametrize_python_and_rust_path
 def test_yen_list(yen_path: str) -> None:
-    output = run([yen_path, "list"])
+    output = run([yen_path, "list"], combined_output=True)
+    assert "Available Pythons:"
     assert "\n3.12." in output
     assert "\n3.11." in output
     assert "\n3.10." in output
@@ -64,3 +85,100 @@ def test_yen_create(yen_path: str) -> None:
         assert "Python 3.11" in output
     finally:
         shutil.rmtree("testvenv", ignore_errors=True)
+
+
+@parametrize_python_and_rust_path
+def test_yen_install(yen_path: str) -> None:
+    output = run([yen_path, "install", "-p3.10", "meowsay"])
+    assert "Installed" in output
+    assert "meowsay" in output
+    assert "Python 3.10" in output
+
+    meowsay_output = run(["meowsay", "hi"], env={"PATH": PACKAGES_INSTALL_PATH})
+    assert meowsay_output == dedent(
+        r"""
+         ____
+        < hi >
+         ----
+                \      |\---/|
+                 \     | ,_, |
+                        \_`_/-..----.
+                     ___/ `   ' ,\"\"+ \  sk
+                    (__...'   __\    |`.___.';
+                      (_,...'(_,.`__)/'.....+
+        """
+    ).removeprefix("\n")
+
+    output = run([yen_path, "install", "meowsay"])
+    assert "meowsay" in output
+    assert "already installed" in output
+
+
+@parametrize_python_and_rust_path
+def test_yen_install_with_binary_name(yen_path: str) -> None:
+    package_name = "python-leetcode-runner"
+    output = run([yen_path, "install", package_name, "--binary", "pyleet"])
+    assert "Installed" in output
+    assert package_name in output
+
+    code = dedent(
+        """
+        class Solution:
+            def add(self, x, y):
+                return x + y
+
+        tests = [((2, 2), 4), ((4, -1), 3)]  # quick maths
+        """
+    )
+    with open("./foo.py", "w") as file:
+        file.write(code)
+
+    pyleet_output = run(
+        ["python-leetcode-runner", "./foo.py"],
+        env={"PATH": PACKAGES_INSTALL_PATH},
+    )
+    os.remove(file.name)
+
+    assert "Test 1 - (2, 2)" in pyleet_output
+    assert "PASSED" in pyleet_output
+    assert "Test 2 - (4, -1)" in pyleet_output
+    assert "All cases passed!" in pyleet_output
+
+
+@parametrize_python_and_rust_path
+def test_yen_install_module(yen_path: str) -> None:
+    output = run([yen_path, "install", "-p3.9", "astmath", "--module", "astmath"])
+    assert "Installed" in output
+    assert "astmath" in output
+    assert "Python 3.9" in output
+
+    executable_path = os.path.join(PACKAGES_INSTALL_PATH, "astmath")
+    with open(executable_path) as executable:
+        executable_code = executable.read()
+
+    assert '-m astmath "$@"' in executable_code
+
+    astmath_output = run(["astmath", "'foo' * 3"], env={"PATH": PACKAGES_INSTALL_PATH})
+    assert astmath_output == "foofoofoo\n"
+
+
+@parametrize_python_and_rust_path
+def test_yen_run(yen_path: str) -> None:
+    output = run([yen_path, "run", "astmath", "--module", "astmath", "--args", "3 * 3"])
+    assert output == "9\n"
+
+    executable_path = os.path.join(PACKAGES_INSTALL_PATH, "astmath")
+    with open(executable_path) as executable:
+        executable_code = executable.read()
+
+    assert "-m astmath" in executable_code
+
+    executable_output = run(["astmath", "2 * 3"], env={"PATH": PACKAGES_INSTALL_PATH})
+    assert executable_output == "6\n"
+
+    repeat_output = run([yen_path, "run", "astmath", "--args", "9 + 10"])
+    assert repeat_output == "19\n"
+
+    install_output = run([yen_path, "install", "astmath"])
+    assert "astmath" in install_output
+    assert "already installed" in install_output

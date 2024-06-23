@@ -46,7 +46,7 @@ def ensure_python(python_version: str) -> tuple[str, str]:
     python_version, download_link = resolve_python_version(python_version)
     download_directory = os.path.join(PYTHON_INSTALLS_PATH, python_version)
 
-    if os.name == "nt":
+    if platform.system() == "Windows":
         python_bin_path = os.path.join(download_directory, "python/python.exe")
     else:
         python_bin_path = os.path.join(download_directory, "python/bin/python3")
@@ -127,7 +127,7 @@ def install_package(
     if is_module:
         # TODO: won't work on windows? create a batch or ps1 file i guess?
         with open(shim_path, "w") as file:
-            file.write(f"{venv_python_path} -m {package_name}")
+            file.write(f'#!/bin/sh\n{venv_python_path} -m {package_name} "$@"')
 
         os.chmod(shim_path, 0o777)
     else:
@@ -143,9 +143,9 @@ def install_package(
     return False  # False as in package didn't exist and was just installed
 
 
-def run_package(package_name: str, command_args: list[str]) -> None:
+def run_package(package_name: str, args: list[str]) -> None:
     shim_path = os.path.join(PACKAGE_INSTALLS_PATH, package_name)
-    subprocess.run([shim_path, *command_args], shell=True)
+    subprocess.run([shim_path, *args])
 
 
 def create_symlink(python_bin_path: str, python_version: str) -> None:
