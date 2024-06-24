@@ -5,3 +5,5 @@ build
 dist
 .tox
 .coverage*
+# files generated during tests
+tests/yen_packages
