@@ -102,8 +102,7 @@ def test_yen_install(yen_path: str) -> None:
     assert "Python 3.10" in output
 
     meowsay_output = run(["meowsay", "hi"], cwd=PACKAGES_INSTALL_PATH)
-    assert (
-        meowsay_output == dedent(
+    assert meowsay_output == dedent(
         r"""
          ____
         < hi >
@@ -115,7 +114,6 @@ def test_yen_install(yen_path: str) -> None:
                     (__...'   __\    |`.___.';
                       (_,...'(_,.`__)/'.....+
         """.removeprefix("\n")
-        )
     )
 
     output = run([yen_path, "install", "meowsay"])
@@ -143,9 +141,7 @@ def test_yen_install_with_binary_name(yen_path: str) -> None:
         file.write(code)
 
     pyleet_output = run(
-        ["python-leetcode-runner",
-        "./foo.py"],
-        cwd=PACKAGES_INSTALL_PATH
+        ["python-leetcode-runner", "./foo.py"], cwd=PACKAGES_INSTALL_PATH
     )
     os.remove(file.name)
 
@@ -170,7 +166,7 @@ def test_yen_install_module(yen_path: str) -> None:
 
         assert '-m astmath "$@"' in executable_code
 
-    astmath_output = run(["astmath", "'foo' * 3"])
+    astmath_output = run(["astmath", "'foo' * 3"], cwd=PACKAGES_INSTALL_PATH)
     assert astmath_output == "foofoofoo\n"
 
 
