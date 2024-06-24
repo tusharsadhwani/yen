@@ -40,7 +40,7 @@ pub async fn create_env(
         ));
     }
 
-    eprintln!(
+    println!(
         "Created {} with Python {} ✨",
         venv_path.to_string_lossy(),
         version
