@@ -20,4 +20,4 @@ if (-not ($userPath -like "*$yenpath*")) {
     Set-ItemProperty -Path 'HKCU:\Environment' -Name 'Path' -Value $newPath
 }
 
-Write-Host "Successfully installed yen! 'refreshenv' or restart the shell to start using the 'yen' command."
+Write-Host "Successfully installed yen! Restart the shell to start using the 'yen' command."
