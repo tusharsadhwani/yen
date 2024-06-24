@@ -109,8 +109,8 @@ def install_package(
     python_bin_path: str,
     executable_name: str,
     *,
-    is_module: bool,
-    force_reinstall: bool,
+    is_module: bool = False,
+    force_reinstall: bool = False,
 ) -> bool:
     os.makedirs(PACKAGE_INSTALLS_PATH, exist_ok=True)
 

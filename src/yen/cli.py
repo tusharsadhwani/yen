@@ -56,25 +56,15 @@ def cli() -> int:
     )
     install_parser.add_argument("--force-reinstall", action="store_true")
 
+    # TODO: add long help texts to each subparser
     run_parser = subparsers.add_parser("run")
     run_parser.add_argument("package_name")
     run_parser.add_argument("-p", "--python", default="3.12")
     run_parser.add_argument(
-        "--args",
-        dest="run_args",
+        "run_args",
         help="Arguments to pass to the command invocation",
         nargs="*",
-        default=(),
     )
-    run_parser.add_argument(
-        "--binary",
-        help="Name of command installed by package. Defaults to package name itself.",
-    )
-    run_parser.add_argument(
-        "--module",
-        help="Use if package should be run as a module, i.e. `python -m <module_name>`",
-    )
-    run_parser.add_argument("--force-reinstall", action="store_true")
 
     use_parser = subparsers.add_parser("use")
     use_parser.add_argument("-p", "--python", required=True)
@@ -163,23 +153,12 @@ def cli() -> int:
             )
             return 1
 
-        if args.module is not None and args.binary is not None:
-            print(
-                "Error: cannot pass `--binary-name` and `--module-name` together.",
-                file=sys.stderr,
-            )
-            return 1
-
         # TODO: add yaspin?
-        executable_name = args.module or args.binary or args.package_name
-        is_module = args.module is not None
         try:
             already_installed = install_package(
                 args.package_name,
                 python_bin_path,
-                executable_name,
-                is_module=is_module,
-                force_reinstall=args.force_reinstall,
+                executable_name=args.package_name,
             )
         except ExecutableDoesNotExist:
             print(
