@@ -113,7 +113,7 @@ def test_yen_install(yen_path: str) -> None:
                      ___/ `   ' ,\"\"+ \  sk
                     (__...'   __\    |`.___.';
                       (_,...'(_,.`__)/'.....+
-        """.rstrip("\n")
+        """[1:]  # to remove leading newline
     )
 
     output = run([yen_path, "install", "meowsay"])
