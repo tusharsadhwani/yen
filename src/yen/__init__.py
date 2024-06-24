@@ -34,12 +34,15 @@ def check_path(path: str) -> None:
         "\033[m"
     )
     windows_msg = "Run `yen ensurepath` to add it to your PATH."
-    
+
     if path not in os.environ["PATH"].split(os.pathsep):
         print(
-            "\033[33m\n"
-            "Warning: The executable just installed is not in PATH.\n"
-            + windows_msg if platform.system() == "Windows" else unix_msg,
+            (
+                "\033[33m\n"
+                "Warning: The executable just installed is not in PATH.\n" + windows_msg
+                if platform.system() == "Windows"
+                else unix_msg
+            ),
             file=sys.stderr,
         )
 

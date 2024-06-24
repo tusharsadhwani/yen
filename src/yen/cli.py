@@ -7,7 +7,16 @@ import os.path
 import sys
 from typing import Literal
 
-from yen import PACKAGE_INSTALLS_PATH, ExecutableDoesNotExist, check_path, create_symlink, create_venv, ensure_python, install_package, run_package
+from yen import (
+    PACKAGE_INSTALLS_PATH,
+    ExecutableDoesNotExist,
+    check_path,
+    create_symlink,
+    create_venv,
+    ensure_python,
+    install_package,
+    run_package,
+)
 from yen.github import NotAvailable, list_pythons
 
 
