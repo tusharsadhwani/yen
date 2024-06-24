@@ -51,16 +51,23 @@ def run(
     command: list[str],
     *,
     combined_output: bool = False,
-    env: dict[str, str] | None = None,
+    cwd: str | None = None,
 ) -> str:
+    if not os.path.isabs(command[0]):
+        command[0] = os.path.abspath(os.path.join(cwd or ".", command[0]))
+
+    if platform.system() == "Windows" and not command[0].endswith(".exe"):
+        command[0] += ".exe"
+
     try:
         output = subprocess.check_output(
             command,
-            stderr=subprocess.STDOUT if combined_output else None,
-            env=env,
-        ).decode(errors="replace")
+            stderr=subprocess.STDOUT if combined_output else subprocess.PIPE,
+            env={**os.environ, "PYTHONUTF8": "1"},
+            text=True,
+        )
     except subprocess.CalledProcessError as exc:
-        print(f"Subprocess output: {exc.output.decode(errors='replace')}")
+        print(f"Subprocess stdout: {exc.stdout}\nstderr: {exc.stderr}")
         raise
 
     return output
@@ -94,8 +101,9 @@ def test_yen_install(yen_path: str) -> None:
     assert "meowsay" in output
     assert "Python 3.10" in output
 
-    meowsay_output = run(["meowsay", "hi"], env={"PATH": PACKAGES_INSTALL_PATH})
-    assert meowsay_output == dedent(
+    meowsay_output = run(["meowsay", "hi"], cwd=PACKAGES_INSTALL_PATH)
+    assert (
+        meowsay_output == dedent(
         r"""
          ____
         < hi >
@@ -106,8 +114,9 @@ def test_yen_install(yen_path: str) -> None:
                      ___/ `   ' ,\"\"+ \  sk
                     (__...'   __\    |`.___.';
                       (_,...'(_,.`__)/'.....+
-        """
-    ).removeprefix("\n")
+        """.removeprefix("\n")
+        )
+    )
 
     output = run([yen_path, "install", "meowsay"])
     assert "meowsay" in output
@@ -134,8 +143,9 @@ def test_yen_install_with_binary_name(yen_path: str) -> None:
         file.write(code)
 
     pyleet_output = run(
-        ["python-leetcode-runner", "./foo.py"],
-        env={"PATH": PACKAGES_INSTALL_PATH},
+        ["python-leetcode-runner",
+        "./foo.py"],
+        cwd=PACKAGES_INSTALL_PATH
     )
     os.remove(file.name)
 
@@ -152,13 +162,15 @@ def test_yen_install_module(yen_path: str) -> None:
     assert "astmath" in output
     assert "Python 3.9" in output
 
-    executable_path = os.path.join(PACKAGES_INSTALL_PATH, "astmath")
-    with open(executable_path) as executable:
-        executable_code = executable.read()
+    if platform.system() != "Windows":
+        # Ensure the module runner file got created
+        executable_path = os.path.join(PACKAGES_INSTALL_PATH, "astmath")
+        with open(executable_path) as executable:
+            executable_code = executable.read()
 
-    assert '-m astmath "$@"' in executable_code
+        assert '-m astmath "$@"' in executable_code
 
-    astmath_output = run(["astmath", "'foo' * 3"], env={"PATH": PACKAGES_INSTALL_PATH})
+    astmath_output = run(["astmath", "'foo' * 3"])
     assert astmath_output == "foofoofoo\n"
 
 
@@ -167,13 +179,15 @@ def test_yen_run(yen_path: str) -> None:
     output = run([yen_path, "run", "astmath", "--module", "astmath", "--args", "3 * 3"])
     assert output == "9\n"
 
-    executable_path = os.path.join(PACKAGES_INSTALL_PATH, "astmath")
-    with open(executable_path) as executable:
-        executable_code = executable.read()
+    if platform.system() != "Windows":
+        # Ensure the module runner file got created
+        executable_path = os.path.join(PACKAGES_INSTALL_PATH, "astmath")
+        with open(executable_path) as executable:
+            executable_code = executable.read()
 
-    assert "-m astmath" in executable_code
+        assert "-m astmath" in executable_code
 
-    executable_output = run(["astmath", "2 * 3"], env={"PATH": PACKAGES_INSTALL_PATH})
+    executable_output = run(["astmath", "2 * 3"], cwd=PACKAGES_INSTALL_PATH)
     assert executable_output == "6\n"
 
     repeat_output = run([yen_path, "run", "astmath", "--args", "9 + 10"])

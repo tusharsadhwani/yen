@@ -27,14 +27,19 @@ class ExecutableDoesNotExist(Exception): ...
 
 def check_path(path: str) -> None:
     """Ensure that given path is in PATH."""
+    unix_msg = (
+        "Run `yen ensurepath`, or add this line to your shell's configuration file:\n"
+        "\033[0;1m"
+        f"export PATH={path}:$PATH"
+        "\033[m"
+    )
+    windows_msg = "Run `yen ensurepath` to add it to your PATH."
+    
     if path not in os.environ["PATH"].split(os.pathsep):
         print(
             "\033[33m\n"
             "Warning: The executable just installed is not in PATH.\n"
-            "Add the following line to your shell's configuration file:\n"
-            "\033[0;1m"
-            f"export PATH={path}:$PATH"
-            "\033[m",
+            + windows_msg if platform.system() == "Windows" else unix_msg,
             file=sys.stderr,
         )
 
@@ -123,9 +128,12 @@ def install_package(
         capture_output=True,
     )
 
+    is_windows = platform.system() == "Windows"
     shim_path = os.path.join(PACKAGE_INSTALLS_PATH, package_name)
-    if is_module:
-        # TODO: won't work on windows? create a batch or ps1 file i guess?
+    if is_windows:
+        shim_path += ".exe"
+
+    if is_module and not is_windows:
         with open(shim_path, "w") as file:
             file.write(f'#!/bin/sh\n{venv_python_path} -m {package_name} "$@"')
 
@@ -137,9 +145,11 @@ def install_package(
             shutil.rmtree(venv_path)
             raise ExecutableDoesNotExist
 
-        os.symlink(executable_path, shim_path)
+        if is_windows:
+            shutil.move(executable_path, shim_path)
+        else:
+            os.symlink(executable_path, shim_path)
 
-    check_path(PACKAGE_INSTALLS_PATH)
     return False  # False as in package didn't exist and was just installed
 
 

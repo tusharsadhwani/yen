@@ -7,12 +7,12 @@ import os.path
 import sys
 from typing import Literal
 
-import yen
-from yen import create_symlink, create_venv, ensure_python, install_package, run_package
+from yen import PACKAGE_INSTALLS_PATH, ExecutableDoesNotExist, check_path, create_symlink, create_venv, ensure_python, install_package, run_package
 from yen.github import NotAvailable, list_pythons
 
 
 class YenArgs:
+    # TODO: add ensurepath, by bundling userpath library (so rust can call it too)
     command: Literal["list", "create", "install", "run", "use"]
     python: str
     venv_path: str
@@ -125,7 +125,7 @@ def cli() -> int:
                 is_module=is_module,
                 force_reinstall=args.force_reinstall,
             )
-        except yen.ExecutableDoesNotExist:
+        except ExecutableDoesNotExist:
             print(
                 f"Error: package {args.package_name} doesn't contain a binary named"
                 f" {executable_name}. Consider passing `--binary` or `--module` flags.",
@@ -140,6 +140,8 @@ def cli() -> int:
                 f"Installed package \033[1m{args.package_name}\033[m"
                 f" with Python {python_version} ✨"
             )
+
+        check_path(PACKAGE_INSTALLS_PATH)
 
     elif args.command == "run":
         try:
@@ -170,7 +172,7 @@ def cli() -> int:
                 is_module=is_module,
                 force_reinstall=args.force_reinstall,
             )
-        except yen.ExecutableDoesNotExist:
+        except ExecutableDoesNotExist:
             print(
                 f"Error: package {args.package_name} doesn't contain a binary named"
                 f" {executable_name}. Consider passing `--binary` or `--module` flags.",
