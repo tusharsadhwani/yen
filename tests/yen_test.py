@@ -158,15 +158,14 @@ def test_yen_install_module(yen_path: str) -> None:
     assert "astmath" in output
     assert "Python 3.9" in output
 
+    # Ensure the module runner file got created
     if platform.system() == "Windows":
-        # Ensure the module runner file got created
         executable_path = os.path.join(PACKAGES_INSTALL_PATH, "astmath.bat")
         with open(executable_path) as executable:
             executable_code = executable.read()
 
         assert "-m astmath %*" in executable_code
     else:
-        # Ensure the module runner file got created
         executable_path = os.path.join(PACKAGES_INSTALL_PATH, "astmath")
         with open(executable_path) as executable:
             executable_code = executable.read()
@@ -179,16 +178,9 @@ def test_yen_install_module(yen_path: str) -> None:
 
 @parametrize_python_and_rust_path
 def test_yen_run(yen_path: str) -> None:
-    output = run([yen_path, "run", "astmath", "--module", "astmath", "3 * 3"])
+    run([yen_path, "install", "astmath", "--module", "astmath"])
+    output = run([yen_path, "run", "astmath", "3 * 3"])
     assert output == "9\n"
-
-    if platform.system() != "Windows":
-        # Ensure the module runner file got created
-        executable_path = os.path.join(PACKAGES_INSTALL_PATH, "astmath")
-        with open(executable_path) as executable:
-            executable_code = executable.read()
-
-        assert "-m astmath" in executable_code
 
     executable_output = run(["astmath", "2 * 3"], cwd=PACKAGES_INSTALL_PATH)
     assert executable_output == "6\n"
