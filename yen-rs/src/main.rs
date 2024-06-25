@@ -23,25 +23,25 @@ lazy_static! {
     static ref RE: Regex = Regex::new(r"cpython-(\d+\.\d+.\d+)").expect("Unable to create regex!");
     static ref MUSL: Regex = Regex::new(r"GNU|GLIBC|glibc").expect("Unable to create regex!");
     static ref YEN_BIN_PATH: PathBuf = {
-        std::fs::canonicalize(match std::env::var("YEN_BIN_PATH") {
+        std::path::absolute(match std::env::var("YEN_BIN_PATH") {
             Ok(yen_packages_path) => PathBuf::from(yen_packages_path),
             Err(_) => home_dir().join(".yen/bin"),
         })
-        .expect("Failed to canonicalize YEN_PACKAGES_PATH")
+        .expect("Failed to turn YEN_BIN_PATH into absolute")
     };
     static ref PYTHON_INSTALLS_PATH: PathBuf = {
-        std::fs::canonicalize(match std::env::var("YEN_PYTHONS_PATH") {
+        std::path::absolute(match std::env::var("YEN_PYTHONS_PATH") {
             Ok(yen_packages_path) => PathBuf::from(yen_packages_path),
             Err(_) => home_dir().join(".yen_pythons"),
         })
-        .expect("Failed to canonicalize YEN_PACKAGES_PATH")
+        .expect("Failed to turn YEN_BIN_PATH into absolute")
     };
     static ref PACKAGE_INSTALLS_PATH: PathBuf = {
-        std::fs::canonicalize(match std::env::var("YEN_PACKAGES_PATH") {
+        std::path::absolute(match std::env::var("YEN_PACKAGES_PATH") {
             Ok(yen_packages_path) => PathBuf::from(yen_packages_path),
             Err(_) => home_dir().join(".yen_packages"),
         })
-        .expect("Failed to canonicalize YEN_PACKAGES_PATH")
+        .expect("Failed to turn YEN_BIN_PATH into absolute")
     };
     static ref USERPATH_PATH: PathBuf = YEN_BIN_PATH.join("userpath.pyz");
     static ref YEN_CLIENT: Client = yen_client();
