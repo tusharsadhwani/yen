@@ -200,7 +200,7 @@ def install_package(
             shutil.rmtree(venv_path)
             raise ExecutableDoesNotExist
 
-        # the binary is always moveable to
+        # the created binary is always moveable
         shutil.move(executable_path, shim_path)
 
     return False  # False as in package didn't exist and was just installed

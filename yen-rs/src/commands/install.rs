@@ -1,4 +1,4 @@
-use std::{process::Command, str::FromStr};
+use std::{os::unix::fs::PermissionsExt, path::PathBuf, process::Command, str::FromStr};
 
 use clap::Parser;
 use miette::IntoDiagnostic;
@@ -6,6 +6,11 @@ use miette::IntoDiagnostic;
 use crate::{github::Version, utils::ensure_python, PACKAGE_INSTALLS_PATH};
 
 use super::create::create_env;
+
+#[cfg(target_os = "windows")]
+const IS_WINDOWS: bool = true;
+#[cfg(not(target_os = "windows"))]
+const IS_WINDOWS: bool = false;
 
 /// List available python versions to create virtual env.
 #[derive(Parser, Debug)]
@@ -41,7 +46,7 @@ pub async fn execute(args: Args) -> miette::Result<()> {
     let executable_name = args.module.or(args.binary).unwrap_or(package_name.clone());
 
     let already_installed = install_package(
-        package_name,
+        &package_name,
         python_bin_path,
         executable_name,
         is_module,
@@ -49,17 +54,18 @@ pub async fn execute(args: Args) -> miette::Result<()> {
     )
     .await?;
 
+    if already_installed {
+        println!("Package {package_name} is already installed.");
+    } else {
+        println!("Installed package {package_name} with Python {python_version} ✨");
+    }
+
     Ok(())
 }
 
 fn _venv_binary_path(binary_name: &str, venv_path: &std::path::PathBuf) -> std::path::PathBuf {
-    #[cfg(target_os = "windows")]
-    let is_windows = true;
-    #[cfg(not(target_os = "windows"))]
-    let is_windows = false;
-
-    let venv_bin_path = venv_path.join(if is_windows { "Scripts" } else { "bin" });
-    let binary_path = venv_bin_path.join(if is_windows {
+    let venv_bin_path = venv_path.join(if IS_WINDOWS { "Scripts" } else { "bin" });
+    let binary_path = venv_bin_path.join(if IS_WINDOWS {
         format!("{binary_name}.exe")
     } else {
         binary_name.to_string()
@@ -68,7 +74,7 @@ fn _venv_binary_path(binary_name: &str, venv_path: &std::path::PathBuf) -> std::
 }
 
 async fn install_package(
-    package_name: String,
+    package_name: &str,
     python_bin_path: std::path::PathBuf,
     executable_name: String,
     is_module: bool,
@@ -78,10 +84,7 @@ async fn install_package(
     let venv_path = PACKAGE_INSTALLS_PATH.join(venv_name);
     if venv_path.exists() {
         if !force_reinstall {
-            miette::bail!(format!(
-                "Error: {} already exists.",
-                venv_path.to_string_lossy()
-            ));
+            return Ok(true); // true as in package already exists
         } else {
             std::fs::remove_dir_all(&venv_path).into_diagnostic()?;
         };
@@ -90,8 +93,9 @@ async fn install_package(
     create_env(python_bin_path, &venv_path).await?;
 
     let venv_python_path = _venv_binary_path("python", &venv_path);
+    let venv_python_path = venv_python_path.to_string_lossy();
 
-    let stdout = Command::new(format!("{}", venv_python_path.to_string_lossy()))
+    let stdout = Command::new(format!("{venv_python_path}"))
         .args(["-m", "pip", "install", &package_name])
         .output()
         .into_diagnostic()?;
@@ -104,5 +108,53 @@ async fn install_package(
         ));
     }
 
-    Ok(true)
+    let mut shim_path = PACKAGE_INSTALLS_PATH.join(&package_name);
+    if is_module {
+        if IS_WINDOWS {
+            shim_path = PathBuf::from(shim_path.to_string_lossy().into_owned() + ".bat");
+        }
+
+        if IS_WINDOWS {
+            std::fs::write(
+                &shim_path,
+                format!("@echo off\n{venv_python_path} -m {package_name} %*"),
+            )
+            .into_diagnostic()?;
+        } else {
+            std::fs::write(
+                &shim_path,
+                format!("#!/bin/sh\n{venv_python_path} -m {package_name} \"$@\""),
+            )
+            .into_diagnostic()?;
+        }
+
+        let mut perms = std::fs::metadata(&shim_path)
+            .into_diagnostic()?
+            .permissions();
+        perms.set_mode(0o777);
+        std::fs::set_permissions(&shim_path, perms).into_diagnostic()?;
+    } else {
+        if IS_WINDOWS {
+            shim_path = PathBuf::from(shim_path.to_string_lossy().into_owned() + ".exe");
+        }
+        let executable_path = _venv_binary_path(&executable_name, &venv_path);
+        if !executable_path.exists() {
+            // cleanup the venv created
+            std::fs::remove_dir_all(&venv_path).into_diagnostic()?;
+            if executable_name == package_name && !is_module {
+                miette::bail!(
+                    "Error: Executable {executable_name} does not exist in package {package_name}. \
+                    Consider passing `--binary` or `--module` flags."
+                );
+            } else {
+                miette::bail!(
+                    "Error: Executable {executable_name} does not exist in package {package_name}."
+                );
+            }
+        }
+        // the created binary is always moveable
+        std::fs::rename(executable_path, shim_path).into_diagnostic()?;
+    }
+
+    Ok(false) // false as in it didn't already exist and was installed just now.
 }
