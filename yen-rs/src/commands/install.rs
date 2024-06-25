@@ -16,7 +16,7 @@ const IS_WINDOWS: bool = true;
 #[cfg(not(target_os = "windows"))]
 const IS_WINDOWS: bool = false;
 
-/// List available python versions to create virtual env.
+/// Install a Python package in an isolated environment.
 #[derive(Parser, Debug)]
 pub struct Args {
     /// Name of package to install
@@ -52,7 +52,7 @@ pub async fn execute(args: Args) -> miette::Result<()> {
     let already_installed = install_package(
         &package_name,
         python_bin_path,
-        executable_name,
+        &executable_name,
         is_module,
         args.force_reinstall,
     )
@@ -111,10 +111,10 @@ fn _venv_binary_path(binary_name: &str, venv_path: &std::path::PathBuf) -> std::
     return binary_path;
 }
 
-async fn install_package(
+pub async fn install_package(
     package_name: &str,
     python_bin_path: std::path::PathBuf,
-    executable_name: String,
+    executable_name: &str,
     is_module: bool,
     force_reinstall: bool,
 ) -> miette::Result<bool> {
