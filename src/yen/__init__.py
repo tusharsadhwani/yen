@@ -31,7 +31,6 @@ def check_path(path: str) -> None:
         "Run `yen ensurepath`, or add this line to your shell's configuration file:\n"
         "\033[0;1m"
         f"export PATH={path}:$PATH"
-        "\033[m"
     )
     windows_msg = "Run `yen ensurepath` to add it to your PATH."
 
@@ -39,9 +38,9 @@ def check_path(path: str) -> None:
         print(
             (
                 "\033[33m\n"
-                "Warning: The executable just installed is not in PATH.\n" + windows_msg
-                if platform.system() == "Windows"
-                else unix_msg
+                "Warning: The executable just installed is not in PATH.\n"
+                + (windows_msg if platform.system() == "Windows" else unix_msg)
+                + "\033[m"
             ),
             file=sys.stderr,
         )
@@ -148,10 +147,8 @@ def install_package(
             shutil.rmtree(venv_path)
             raise ExecutableDoesNotExist
 
-        if is_windows:
-            shutil.move(executable_path, shim_path)
-        else:
-            os.symlink(executable_path, shim_path)
+        # the binary is always moveable to
+        shutil.move(executable_path, shim_path)
 
     return False  # False as in package didn't exist and was just installed
 

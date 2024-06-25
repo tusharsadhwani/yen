@@ -7,7 +7,7 @@ use env_logger::{Builder, WriteStyle};
 use lazy_static::lazy_static;
 use log::LevelFilter;
 
-use commands::{create, list};
+use commands::{create, install, list};
 use regex::Regex;
 use reqwest::Client;
 
@@ -24,8 +24,16 @@ lazy_static! {
     static ref MUSL: Regex = Regex::new(r"GNU|GLIBC|glibc").expect("Unable to create regex!");
     static ref PYTHON_INSTALLS_PATH: PathBuf = {
         match std::env::var("YEN_PYTHONS_PATH") {
-            Ok(yen_pythons_path) => PathBuf::from(yen_pythons_path),
+            Ok(yen_pythons_path) => std::fs::canonicalize(PathBuf::from(yen_pythons_path))
+                .expect("Failed to canonicalize YEN_PYTHONS_PATH"),
             Err(_) => home_dir().join(".yen_pythons"),
+        }
+    };
+    static ref PACKAGE_INSTALLS_PATH: PathBuf = {
+        match std::env::var("YEN_PACKAGES_PATH") {
+            Ok(yen_packages_path) => std::fs::canonicalize(PathBuf::from(yen_packages_path))
+                .expect("Failed to canonicalize YEN_PACKAGES_PATH"),
+            Err(_) => home_dir().join(".yen_packages"),
         }
     };
     static ref YEN_CLIENT: Client = yen_client();
@@ -50,6 +58,7 @@ enum Command {
     List(list::Args),
     #[clap(alias = "c")]
     Create(create::Args),
+    Install(install::Args),
 }
 
 fn main() {
@@ -80,5 +89,6 @@ async fn execute(args: Args) -> miette::Result<()> {
     match args.command {
         Command::Create(args) => create::execute(args).await,
         Command::List(args) => list::execute(args).await,
+        Command::Install(args) => install::execute(args).await,
     }
 }

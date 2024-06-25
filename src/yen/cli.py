@@ -96,19 +96,19 @@ def cli() -> int:
         print(f"Created \033[1m{args.venv_path}\033[m with Python {python_version} ✨")
 
     elif args.command == "install":
+        if args.module is not None and args.binary is not None:
+            print(
+                "Error: cannot pass `--binary` and `--module` together.",
+                file=sys.stderr,
+            )
+            return 1
+
         try:
             python_version, python_bin_path = ensure_python(args.python)
         except NotAvailable:
             print(
                 "Error: requested Python version is not available."
                 " Use 'yen list' to get list of available Pythons.",
-                file=sys.stderr,
-            )
-            return 1
-
-        if args.module is not None and args.binary is not None:
-            print(
-                "Error: cannot pass `--binary-name` and `--module-name` together.",
                 file=sys.stderr,
             )
             return 1
