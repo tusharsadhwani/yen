@@ -53,12 +53,17 @@ def run(
     combined_output: bool = False,
     cwd: str | None = None,
 ) -> str:
-    if not os.path.isabs(command[0]):
-        command[0] = os.path.abspath(os.path.join(cwd or ".", command[0]))
+    executable = command[0]
+    if not os.path.isabs(executable):
+        executable = os.path.abspath(os.path.join(cwd or ".", executable))
 
-    if platform.system() == "Windows" and not command[0].endswith(".exe"):
-        command[0] += ".exe"
+    if platform.system() == "Windows" and not executable.endswith((".bat", ".exe")):
+        if os.path.exists(executable + ".bat"):
+            executable += ".bat"
+        else:
+            executable += ".exe"
 
+    command[0] = executable
     try:
         output = subprocess.check_output(
             command,
