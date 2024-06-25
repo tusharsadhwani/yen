@@ -67,9 +67,10 @@ def find_or_download_python() -> str:
     Finds and returns any Python binary from `PYTHON_INSTALLS_PATH`.
     If no Pythons exist, downloads the default version and returns that.
     """
-    for python_folder in PYTHON_INSTALLS_PATH:
+    for python_folder_name in os.listdir(PYTHON_INSTALLS_PATH):
+        python_folder = os.path.join(PYTHON_INSTALLS_PATH, python_folder_name)
         python_bin_path = _python_bin_path(python_folder)
-        if os.path.exists(python_bin_path):
+        if os.path.isfile(python_bin_path):
             return python_bin_path
 
     # No Python binary found. Download one.

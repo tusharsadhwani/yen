@@ -4,6 +4,7 @@ use std::{
     fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
+    str::FromStr,
 };
 
 use flate2::read::GzDecoder;
@@ -15,7 +16,7 @@ use tar::Archive;
 
 use crate::{
     github::{resolve_python_version, Version},
-    PYTHON_INSTALLS_PATH, YEN_CLIENT,
+    DEFAULT_PYTHON_VERSION, PYTHON_INSTALLS_PATH, USERPATH_PATH, YEN_BIN_PATH, YEN_CLIENT,
 };
 
 #[cfg(target_os = "linux")]
@@ -26,26 +27,21 @@ use std::io::Read;
 
 pub async fn ensure_python(version: Version) -> miette::Result<(Version, PathBuf)> {
     if !PYTHON_INSTALLS_PATH.exists() {
-        fs::create_dir(&*PYTHON_INSTALLS_PATH).into_diagnostic()?;
+        fs::create_dir(PYTHON_INSTALLS_PATH.to_path_buf()).into_diagnostic()?;
     }
 
     let (version, link) = resolve_python_version(version).await?;
 
     let download_dir = PYTHON_INSTALLS_PATH.join(version.to_string());
 
-    #[cfg(target_os = "windows")]
-    let python_bin_path = download_dir.join("python/python.exe");
-    #[cfg(not(target_os = "windows"))]
-    let python_bin_path = download_dir.join("python/bin/python3");
-
-    if !download_dir.exists() {
-        fs::create_dir_all(&download_dir).into_diagnostic()?;
-    }
-
+    let python_bin_path = _python_bin_path(&download_dir);
     if python_bin_path.exists() {
         return Ok((version, python_bin_path));
     }
 
+    if !download_dir.exists() {
+        fs::create_dir_all(&download_dir).into_diagnostic()?;
+    }
     let downloaded_file = download(link.as_str(), &download_dir).await?;
 
     let file = File::open(downloaded_file).into_diagnostic()?;
@@ -55,6 +51,56 @@ pub async fn ensure_python(version: Version) -> miette::Result<(Version, PathBuf
         .into_diagnostic()?;
 
     Ok((version, python_bin_path))
+}
+
+/// Finds and returns any Python binary from `PYTHON_INSTALLS_PATH`.
+/// If no Pythons exist, downloads the default version and returns that.
+pub async fn find_or_download_python() -> miette::Result<PathBuf> {
+    for path in std::fs::read_dir(PYTHON_INSTALLS_PATH.to_path_buf()).into_diagnostic()? {
+        let Ok(python_folder) = path else {
+            continue;
+        };
+        let python_bin_path = _python_bin_path(&python_folder.path());
+        if python_bin_path.exists() {
+            return Ok(python_bin_path);
+        };
+    }
+
+    // No Python binary found. Download one.
+    let (_, python_bin_path) =
+        ensure_python(Version::from_str(DEFAULT_PYTHON_VERSION).unwrap()).await?;
+    return Ok(python_bin_path);
+}
+
+/// Downloads `userpath.pyz`, if it doesn't exist in `YEN_BIN_PATH`.
+pub async fn _ensure_userpath() -> miette::Result<()> {
+    if USERPATH_PATH.exists() {
+        return Ok(());
+    }
+
+    if !YEN_BIN_PATH.exists() {
+        std::fs::create_dir(YEN_BIN_PATH.to_path_buf()).into_diagnostic()?;
+    }
+
+    let userpath_content = YEN_CLIENT
+        .get("https://yen.tushar.lol/userpath.pyz")
+        .send()
+        .await
+        .into_diagnostic()?
+        .bytes()
+        .await
+        .into_diagnostic()?;
+
+    std::fs::write(USERPATH_PATH.to_path_buf(), userpath_content).into_diagnostic()?;
+    Ok(())
+}
+
+pub fn _python_bin_path(download_dir: &PathBuf) -> PathBuf {
+    #[cfg(target_os = "windows")]
+    let python_bin_path = download_dir.join("python/python.exe");
+    #[cfg(not(target_os = "windows"))]
+    let python_bin_path = download_dir.join("python/bin/python3");
+    python_bin_path
 }
 
 pub async fn download(link: &str, path: &Path) -> miette::Result<PathBuf> {

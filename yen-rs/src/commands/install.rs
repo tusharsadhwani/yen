@@ -3,7 +3,11 @@ use std::{os::unix::fs::PermissionsExt, path::PathBuf, process::Command, str::Fr
 use clap::Parser;
 use miette::IntoDiagnostic;
 
-use crate::{github::Version, utils::ensure_python, PACKAGE_INSTALLS_PATH};
+use crate::{
+    github::Version,
+    utils::{_ensure_userpath, ensure_python, find_or_download_python},
+    DEFAULT_PYTHON_VERSION, PACKAGE_INSTALLS_PATH, USERPATH_PATH,
+};
 
 use super::create::create_env;
 
@@ -20,7 +24,7 @@ pub struct Args {
     package_name: String,
 
     /// Python version to install package with
-    #[arg(short, long, default_value_t = Version::from_str("3.12").unwrap())]
+    #[arg(short, long, default_value_t = Version::from_str(DEFAULT_PYTHON_VERSION).unwrap())]
     python: Version,
 
     /// Name of command installed by package. Defaults to package name itself.
@@ -58,6 +62,40 @@ pub async fn execute(args: Args) -> miette::Result<()> {
         println!("Package {package_name} is already installed.");
     } else {
         println!("Installed package {package_name} with Python {python_version} ✨");
+    }
+
+    check_path(PACKAGE_INSTALLS_PATH.to_path_buf()).await?;
+    Ok(())
+}
+
+async fn check_path(path: PathBuf) -> miette::Result<()> {
+    let path_exists = if IS_WINDOWS {
+        _ensure_userpath().await?;
+        let python_bin_path = find_or_download_python().await?;
+        let stdout = Command::new(format!("{}", python_bin_path.to_string_lossy()))
+            .args([
+                &USERPATH_PATH.to_string_lossy(),
+                "check",
+                &path.to_string_lossy(),
+            ])
+            .output()
+            .into_diagnostic()?;
+
+        stdout.status.success()
+    } else {
+        match std::env::var_os("PATH") {
+            Some(paths) => std::env::split_paths(&paths)
+                .find(|element| *element == path)
+                .is_some(),
+            None => miette::bail!("Failed to read $PATH variable"),
+        }
+    };
+
+    if !path_exists {
+        eprintln!(
+            "\x1b[1;33mWarning: The executable just installed is not in PATH.\n\
+            Run `yen ensurepath` to add it to your PATH.\x1b[m",
+        )
     }
 
     Ok(())
