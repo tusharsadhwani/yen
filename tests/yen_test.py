@@ -164,7 +164,7 @@ def test_yen_install_module(yen_path: str) -> None:
         with open(executable_path) as executable:
             executable_code = executable.read()
 
-        assert '-m astmath %*' in executable_code
+        assert "-m astmath %*" in executable_code
     else:
         # Ensure the module runner file got created
         executable_path = os.path.join(PACKAGES_INSTALL_PATH, "astmath")
@@ -179,7 +179,7 @@ def test_yen_install_module(yen_path: str) -> None:
 
 @parametrize_python_and_rust_path
 def test_yen_run(yen_path: str) -> None:
-    output = run([yen_path, "run", "astmath", "--module", "astmath", "--args", "3 * 3"])
+    output = run([yen_path, "run", "astmath", "--module", "astmath", "3 * 3"])
     assert output == "9\n"
 
     if platform.system() != "Windows":
@@ -193,7 +193,7 @@ def test_yen_run(yen_path: str) -> None:
     executable_output = run(["astmath", "2 * 3"], cwd=PACKAGES_INSTALL_PATH)
     assert executable_output == "6\n"
 
-    repeat_output = run([yen_path, "run", "astmath", "--args", "9 + 10"])
+    repeat_output = run([yen_path, "run", "astmath", "9 + 10"])
     assert repeat_output == "19\n"
 
     install_output = run([yen_path, "install", "astmath"])
