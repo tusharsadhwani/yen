@@ -59,7 +59,7 @@ def _ensure_userpath() -> None:
         return
 
     os.makedirs(YEN_BIN_PATH, exist_ok=True)
-    urlretrieve("https://yen.tushar.lol/userpath.pyz", filename=USERPATH_PATH)
+    urlretrieve("http://yen.tushar.lol/userpath.pyz", filename=USERPATH_PATH)
 
 
 def find_or_download_python() -> str:
@@ -124,6 +124,7 @@ def ensure_python(python_version: str) -> tuple[str, str]:
         print("\033[1;31mError:\033[m Checksum did not match!")
         os.remove(downloaded_filepath)
         raise SystemExit(1)
+    print("Checksum verified!")
 
     with tarfile.open(downloaded_filepath, mode="r:gz") as tar:
         tar.extractall(download_directory)
