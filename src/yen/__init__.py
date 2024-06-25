@@ -10,10 +10,14 @@ import shutil
 import subprocess
 import sys
 import tarfile
+from urllib.request import urlretrieve
 
 from yen.downloader import download, read_url
 from yen.github import resolve_python_version
 
+YEN_BIN_PATH = os.path.abspath(
+    os.getenv("YEN_BIN_PATH", os.path.expanduser("~/.yen/bin"))
+)
 PYTHON_INSTALLS_PATH = os.path.abspath(
     os.getenv("YEN_PYTHONS_PATH", os.path.expanduser("~/.yen_pythons"))
 )
@@ -21,30 +25,74 @@ PACKAGE_INSTALLS_PATH = os.path.abspath(
     os.getenv("YEN_PACKAGES_PATH", os.path.expanduser("~/.yen_packages"))
 )
 
+USERPATH_PATH = os.path.join(YEN_BIN_PATH, "userpath.pyz")
+
+DEFAULT_PYTHON_VERSION = "3.12"
+
 
 class ExecutableDoesNotExist(Exception): ...
 
 
 def check_path(path: str) -> None:
-    """Ensure that given path is in PATH."""
-    # TODO: broken on windows, use userpath.pyz
-    unix_msg = (
-        "Run `yen ensurepath`, or add this line to your shell's configuration file:\n"
-        "\033[0;1m"
-        f"export PATH={path}:$PATH"
-    )
-    windows_msg = "Run `yen ensurepath` to add it to your PATH."
+    """Check if given path is in PATH, and inform the user otherwise."""
+    if platform.system() == "Windows":
+        _ensure_userpath()
+        python_bin_path = find_or_download_python()
+        process = subprocess.run([python_bin_path, USERPATH_PATH, "check", path])
+        path_exists = process.returncode == 0
+    else:
+        path_exists = path in os.environ["PATH"].split(os.pathsep)
 
-    if path not in os.environ["PATH"].split(os.pathsep):
+    if not path_exists:
         print(
-            (
-                "\033[33m\n"
-                "Warning: The executable just installed is not in PATH.\n"
-                + (windows_msg if platform.system() == "Windows" else unix_msg)
-                + "\033[m"
-            ),
+            "\033[33m"
+            "Warning: The executable just installed is not in PATH.\n"
+            "Run `yen ensurepath` to add it to your PATH."
+            "\033[m",
             file=sys.stderr,
         )
+
+
+def _ensure_userpath() -> None:
+    """Downloads `userpath.pyz`, if it doesn't exist in `YEN_BIN_PATH`."""
+    if os.path.exists(USERPATH_PATH):
+        return
+
+    os.makedirs(YEN_BIN_PATH, exist_ok=True)
+    urlretrieve("https://yen.tushar.lol/userpath.pyz", filename=USERPATH_PATH)
+
+
+def find_or_download_python() -> str:
+    """
+    Finds and returns any Python binary from `PYTHON_INSTALLS_PATH`.
+    If no Pythons exist, downloads the default version and returns that.
+    """
+    for python_folder in PYTHON_INSTALLS_PATH:
+        python_bin_path = _python_bin_path(python_folder)
+        if os.path.exists(python_bin_path):
+            return python_bin_path
+
+    # No Python binary found. Download one.
+    _, python_bin_path = ensure_python(DEFAULT_PYTHON_VERSION)
+    return python_bin_path
+
+
+def ensurepath() -> None:
+    """Ensures that PACKAGE_INSTALLS_PATH is in PATH."""
+    _ensure_userpath()
+    python_bin_path = find_or_download_python()
+    subprocess.run(
+        [python_bin_path, USERPATH_PATH, "append", PACKAGE_INSTALLS_PATH],
+        check=True,
+    )
+
+
+def _python_bin_path(python_directory: str) -> str:
+    """Return the python binary path in a downloaded and extracted Python."""
+    if platform.system() == "Windows":
+        return os.path.join(python_directory, "python", "python.exe")
+    else:
+        return os.path.join(python_directory, "python", "bin", "python3")
 
 
 def ensure_python(python_version: str) -> tuple[str, str]:
@@ -54,10 +102,7 @@ def ensure_python(python_version: str) -> tuple[str, str]:
     python_version, download_link = resolve_python_version(python_version)
     download_directory = os.path.join(PYTHON_INSTALLS_PATH, python_version)
 
-    if platform.system() == "Windows":
-        python_bin_path = os.path.join(download_directory, "python/python.exe")
-    else:
-        python_bin_path = os.path.join(download_directory, "python/bin/python3")
+    python_bin_path = _python_bin_path(download_directory)
     if os.path.exists(python_bin_path):
         # already installed
         return python_version, python_bin_path
@@ -139,7 +184,7 @@ def install_package(
 
         with open(shim_path, "w") as file:
             if is_windows:
-                file.write(f'@echo off\n{venv_python_path} -m {package_name} %*')
+                file.write(f"@echo off\n{venv_python_path} -m {package_name} %*")
             else:
                 file.write(f'#!/bin/sh\n{venv_python_path} -m {package_name} "$@"')
 

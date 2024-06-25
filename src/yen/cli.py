@@ -8,12 +8,14 @@ import sys
 from typing import Literal
 
 from yen import (
+    DEFAULT_PYTHON_VERSION,
     PACKAGE_INSTALLS_PATH,
     ExecutableDoesNotExist,
     check_path,
     create_symlink,
     create_venv,
     ensure_python,
+    ensurepath,
     install_package,
     run_package,
 )
@@ -21,8 +23,7 @@ from yen.github import NotAvailable, list_pythons
 
 
 class YenArgs:
-    # TODO: add ensurepath, by bundling userpath library (so rust can call it too)
-    command: Literal["list", "create", "install", "run", "use"]
+    command: Literal["list", "ensurepath", "create", "install", "run", "use"]
     python: str
     venv_path: str
     package_name: str
@@ -38,6 +39,7 @@ def cli() -> int:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     subparsers.add_parser("list")
+    subparsers.add_parser("ensurepath")
 
     create_parser = subparsers.add_parser("create")
     create_parser.add_argument("venv_path", type=os.path.abspath)
@@ -45,7 +47,7 @@ def cli() -> int:
 
     install_parser = subparsers.add_parser("install")
     install_parser.add_argument("package_name")
-    install_parser.add_argument("-p", "--python", default="3.12")
+    install_parser.add_argument("-p", "--python", default=DEFAULT_PYTHON_VERSION)
     install_parser.add_argument(
         "--binary",
         help="Name of command installed by package. Defaults to package name itself.",
@@ -59,7 +61,7 @@ def cli() -> int:
     # TODO: add long help texts to each subparser
     run_parser = subparsers.add_parser("run")
     run_parser.add_argument("package_name")
-    run_parser.add_argument("-p", "--python", default="3.12")
+    run_parser.add_argument("-p", "--python", default=DEFAULT_PYTHON_VERSION)
     run_parser.add_argument(
         "run_args",
         help="Arguments to pass to the command invocation",
@@ -76,6 +78,13 @@ def cli() -> int:
         print("Available Pythons:", file=sys.stderr)
         for version in versions:
             print(version)
+
+    if args.command == "ensurepath":
+        ensurepath()
+        print(
+            f"`{PACKAGE_INSTALLS_PATH}` is now present in your PATH."
+            " Restart your shell for it to take effect."
+        )
 
     elif args.command == "create":
         try:
