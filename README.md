@@ -15,11 +15,13 @@ Get the tool by running the following command:
 - Windows:
 
   Using cmd:
+
   ```cmd
   curl -L yen.tushar.lol/install.bat | cmd
   ```
 
   or using Powershell:
+
   ```pwsh
   curl -L yen.tushar.lol/install.ps1 | Invoke-Expression
   ```
@@ -69,6 +71,17 @@ To run rust tests:
 - Compile the rust project: `cd yen-rs && cargo build`
 - Add `yen-rs` to `PATH`: `export YEN_RUST_PATH=./yen-rs/target/debug/yen-rs`
 - Run `pytest`, and ensure that number of tests ran has doubled.
+
+### `microvenv.py` and `userpath.pyz`
+
+These two files are used by `yen` and downloaded by the `yen` install script.
+
+- `microvenv.py` is just [this file][1] renamed.
+- `userpath.pyz` is created by running `./build-standalone.sh` in
+  [this fork of userpath][2].
+
+[1]: https://github.com/brettcannon/microvenv/blob/3460d1e/microvenv/_create.py
+[2]: https://github.com/tusharsadhwani/userpath-standalone
 
 ## Type Checking
 
