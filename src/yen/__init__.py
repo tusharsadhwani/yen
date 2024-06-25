@@ -27,6 +27,7 @@ class ExecutableDoesNotExist(Exception): ...
 
 def check_path(path: str) -> None:
     """Ensure that given path is in PATH."""
+    # TODO: broken on windows, use userpath.pyz
     unix_msg = (
         "Run `yen ensurepath`, or add this line to your shell's configuration file:\n"
         "\033[0;1m"
@@ -132,15 +133,21 @@ def install_package(
 
     is_windows = platform.system() == "Windows"
     shim_path = os.path.join(PACKAGE_INSTALLS_PATH, package_name)
-    if is_windows:
-        shim_path += ".exe"
+    if is_module:
+        if is_windows:
+            shim_path += ".bat"
 
-    if is_module and not is_windows:
         with open(shim_path, "w") as file:
-            file.write(f'#!/bin/sh\n{venv_python_path} -m {package_name} "$@"')
+            if is_windows:
+                file.write(f'@echo off\n{venv_python_path} -m {package_name} %*')
+            else:
+                file.write(f'#!/bin/sh\n{venv_python_path} -m {package_name} "$@"')
 
         os.chmod(shim_path, 0o777)
     else:
+        if is_windows:
+            shim_path += ".exe"
+
         executable_path = _venv_binary_path(executable_name, venv_path)
         if not os.path.exists(executable_path):
             # cleanup the venv created

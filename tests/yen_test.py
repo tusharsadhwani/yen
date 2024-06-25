@@ -158,7 +158,14 @@ def test_yen_install_module(yen_path: str) -> None:
     assert "astmath" in output
     assert "Python 3.9" in output
 
-    if platform.system() != "Windows":
+    if platform.system() == "Windows":
+        # Ensure the module runner file got created
+        executable_path = os.path.join(PACKAGES_INSTALL_PATH, "astmath.bat")
+        with open(executable_path) as executable:
+            executable_code = executable.read()
+
+        assert '-m astmath %*' in executable_code
+    else:
         # Ensure the module runner file got created
         executable_path = os.path.join(PACKAGES_INSTALL_PATH, "astmath")
         with open(executable_path) as executable:

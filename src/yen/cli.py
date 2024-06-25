@@ -125,11 +125,13 @@ def cli() -> int:
                 force_reinstall=args.force_reinstall,
             )
         except ExecutableDoesNotExist:
-            print(
+            error_message = (
                 f"Error: package {args.package_name} doesn't contain a binary named"
-                f" {executable_name}. Consider passing `--binary` or `--module` flags.",
-                file=sys.stderr,
+                f" {executable_name}."
             )
+            if not (args.module or args.binary):
+                error_message += " Consider passing `--binary` or `--module` flags."
+            print(error_message, file=sys.stderr)
             return 4
 
         if already_installed:
