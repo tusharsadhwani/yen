@@ -5,8 +5,7 @@ use miette::IntoDiagnostic;
 
 use crate::{
     github::Version,
-    utils::{_ensure_microvenv, _venv_binary_path, ensure_python, IS_WINDOWS},
-    MICROVENV_PATH,
+    utils::ensure_python,
 };
 
 /// Create venv with python version
@@ -27,21 +26,22 @@ pub async fn create_env(python_bin_path: PathBuf, venv_path: &PathBuf) -> miette
         miette::bail!("Error: {} already exists!", venv_path.to_string_lossy());
     }
 
-    let stdout = if IS_WINDOWS {
+    let stdout = 
+    // if IS_WINDOWS {
         Command::new(format!("{}", python_bin_path.to_string_lossy()))
             .args(["-m", "venv", &format!("{}", venv_path.to_string_lossy())])
             .output()
-            .into_diagnostic()?
-    } else {
-        _ensure_microvenv().await?;
-        Command::new(format!("{}", python_bin_path.to_string_lossy()))
-            .args([
-                &MICROVENV_PATH.to_string_lossy().into_owned(),
-                &venv_path.to_string_lossy().into_owned(),
-            ])
-            .output()
-            .into_diagnostic()?
-    };
+            .into_diagnostic()?;
+    // } else {
+    //     _ensure_microvenv().await?;
+    //     Command::new(format!("{}", python_bin_path.to_string_lossy()))
+    //         .args([
+    //             &MICROVENV_PATH.to_string_lossy().into_owned(),
+    //             &venv_path.to_string_lossy().into_owned(),
+    //         ])
+    //         .output()
+    //         .into_diagnostic()?
+    // };
 
     if !stdout.status.success() {
         miette::bail!(format!(
@@ -51,21 +51,21 @@ pub async fn create_env(python_bin_path: PathBuf, venv_path: &PathBuf) -> miette
         ));
     }
 
-    if !IS_WINDOWS {
-        let venv_python_path = _venv_binary_path("python", venv_path);
-        let stdout = Command::new(format!("{}", venv_python_path.to_string_lossy()))
-            .args(["-m", "ensurepip"])
-            .output()
-            .into_diagnostic()?;
+    // if !IS_WINDOWS {
+    //     let venv_python_path = _venv_binary_path("python", venv_path);
+    //     let stdout = Command::new(format!("{}", venv_python_path.to_string_lossy()))
+    //         .args(["-m", "ensurepip"])
+    //         .output()
+    //         .into_diagnostic()?;
 
-        if !stdout.status.success() {
-            miette::bail!(format!(
-                "Error: unable to run ensurepip!\nStdout: {}\nStderr: {}",
-                String::from_utf8_lossy(&stdout.stdout),
-                String::from_utf8_lossy(&stdout.stderr),
-            ));
-        }
-    }
+    //     if !stdout.status.success() {
+    //         miette::bail!(format!(
+    //             "Error: unable to run ensurepip!\nStdout: {}\nStderr: {}",
+    //             String::from_utf8_lossy(&stdout.stdout),
+    //             String::from_utf8_lossy(&stdout.stderr),
+    //         ));
+    //     }
+    // }
 
     Ok(())
 }

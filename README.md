@@ -41,6 +41,8 @@ We're finally putting an end to this XKCD.
   Python 3.9.18
   ```
 
+  > NOTE: It's not that fast right now as I found a bug. Working on it.
+
 - **Zero dependencies**: No need to have Python installed, no need to look into `apt`,
   `homebrew` etc., just run one shell command to get `yen` set up locally.
 

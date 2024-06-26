@@ -150,18 +150,18 @@ def ensure_python(python_version: str) -> tuple[str, str]:
 
 
 def create_venv(python_bin_path: str, venv_path: str) -> None:
-    if platform.system() == "Windows":
-        subprocess.run([python_bin_path, "-m", "venv", venv_path], check=True)
-        return
+    # if platform.system() == "Windows":
+    subprocess.run([python_bin_path, "-m", "venv", venv_path], check=True)
+    return
 
-    _ensure_microvenv()
-    subprocess.run([python_bin_path, MICROVENV_PATH, venv_path], check=True)
-    venv_python_path = _venv_binary_path("python", venv_path)
-    subprocess.run(
-        [venv_python_path, "-m", "ensurepip"],
-        check=True,
-        capture_output=True,
-    )
+    # _ensure_microvenv()
+    # subprocess.run([python_bin_path, MICROVENV_PATH, venv_path], check=True)
+    # venv_python_path = _venv_binary_path("python", venv_path)
+    # subprocess.run(
+    #     [venv_python_path, "-m", "ensurepip"],
+    #     check=True,
+    #     capture_output=True,
+    # )
 
 
 def _venv_binary_path(binary_name: str, venv_path: str) -> str:
