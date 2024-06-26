@@ -8,7 +8,7 @@ We're finally putting an end to this XKCD.
 
 ## So what can `yen` do?
 
-- Get any Python version running instantly with just 1 command:
+- **Get any Python version running instantly** with just 1 command:
 
   ```console
   $ python
@@ -20,8 +20,7 @@ We're finally putting an end to this XKCD.
   Type "help", "copyright", "credits" or "license" for more information.
   >>> exit()
 
-  # Cached for subsequent uses:
-  $ yen exec --python 3.12
+  $ yen exec --python 3.12  # Cached for subsequent uses:
   Python 3.12.3 (main, Apr 15 2024, 17:43:11) [Clang 17.0.6 ] on darwin
   Type "help", "copyright", "credits" or "license" for more information.
   >>>
@@ -29,7 +28,7 @@ We're finally putting an end to this XKCD.
 
   Works on Windows, MacOS and Linux (`libc` and `musl`), on Intel and ARM chips.
 
-- Instant `venv` creation: Thanks to `microvenv`, `yen` can create virutal
+- **Instant `venv` creation**: Thanks to `microvenv`, `yen` can create virutal
   environments much faster than the builtin `venv` module:
 
   ```console
@@ -42,20 +41,20 @@ We're finally putting an end to this XKCD.
   Python 3.9.18
   ```
 
-- Zero dependency: No need to have Python installed, no need to look into `apt`,
+- **Zero dependencies**: No need to have Python installed, no need to look into `apt`,
   `homebrew` etc., just run one shell command to get `yen` set up locally.
 
-- Python script management: Never run `pip install` to get a tool like `ruff`,
+- **Python script management**: Never run `pip install` to get a tool like `ruff`,
   `awscli` etc. in the global Python environment ever again.
 
-**Essentially, `yen` lets you substitute various other Python environment
-management tools such as `pyenv`, `pipx` and `virtualenv`, with a single static binary.**
+**Essentially, `yen` lets you replace various Python environment management tools
+such as `pyenv`, `pipx` and `virtualenv`, with a single static binary.**
 
 Running Python code on any machine has never been this easy.
 
 ## Installation
 
-Get the tool by running the following command:
+Get `yen` by running the following command:
 
 - MacOS / Linux:
 
@@ -142,8 +141,8 @@ Weather report: paris
       /   \     0.0 mm
 ```
 
-> By default the python-installation will be done in ~/.yen_pythons.
-> You can change this location by setting a different path using the environment variable `YEN_PYTHONS_PATH`.
+> By default the Pythons will be downloaded in `~/.yen_pythons`.
+> You can change this location by setting the `YEN_PYTHONS_PATH` environment variable.
 
 ## Local Development / Testing
 
