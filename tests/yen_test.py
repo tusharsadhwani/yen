@@ -212,7 +212,9 @@ def test_ensurepath() -> None:
     # [-1] will test rust binary in build, and python package in tox tests
     (yen_path,) = yen_paths[-1]
 
-    userpath_path = os.path.join(os.path.dirname(__file__), "../userpath.pyz")
+    userpath_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../userpath.pyz")
+    )
 
     with pytest.raises(Failed):
         run([sys.executable, userpath_path, "check", PACKAGES_INSTALL_PATH])
