@@ -133,9 +133,9 @@ pub async fn install_package(
         }
     }
 
-    println!("{shim_path:?} {venv_path:?}");
     let venv_name = format!("venv_{package_name}");
     let venv_path = PACKAGE_INSTALLS_PATH.join(venv_name);
+    println!("{shim_path:?} {venv_path:?}");
     if shim_path.exists() {
         if !force_reinstall {
             return Ok((shim_path, true)); // true as in package already exists
