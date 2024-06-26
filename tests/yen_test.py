@@ -57,14 +57,15 @@ def run(
     cwd: str | None = None,
 ) -> str:
     cmd = command[0]
+    
+    if not os.path.isabs(cmd):
+        cmd = os.path.abspath(os.path.join(cwd or ".", cmd))
+
     if platform.system() == "Windows" and not cmd.lower().endswith((".bat", ".exe")):
         if os.path.exists(cmd + ".bat"):
             cmd += ".bat"
         else:
             cmd += ".exe"
-
-    if not os.path.isabs(cmd):
-        cmd = os.path.abspath(os.path.join(cwd or ".", cmd))
 
     command[0] = cmd
     try:
