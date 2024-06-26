@@ -147,6 +147,9 @@ def ensure_python(python_version: str) -> tuple[str, str]:
 
 
 def create_venv(python_bin_path: str, venv_path: str) -> None:
+    if platform.system() == "Windows":
+        subprocess.run([python_bin_path, "-m", "venv", venv_path], check=True)
+
     _ensure_microvenv()
     subprocess.run([python_bin_path, MICROVENV_PATH, venv_path], check=True)
     venv_python_path = _venv_binary_path("python", venv_path)
