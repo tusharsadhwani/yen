@@ -26,6 +26,11 @@ use crate::MUSL;
 #[cfg(target_os = "linux")]
 use std::io::Read;
 
+#[cfg(target_os = "windows")]
+pub const IS_WINDOWS: bool = true;
+#[cfg(not(target_os = "windows"))]
+pub const IS_WINDOWS: bool = false;
+
 pub async fn ensure_python(version: Version) -> miette::Result<(Version, PathBuf)> {
     if !PYTHON_INSTALLS_PATH.exists() {
         fs::create_dir(PYTHON_INSTALLS_PATH.to_path_buf()).into_diagnostic()?;
@@ -119,12 +124,24 @@ pub async fn _ensure_microvenv() -> miette::Result<()> {
     Ok(())
 }
 
+/// Returns the path to the Python executable inside a downloaded Python
 pub fn _python_bin_path(download_dir: &PathBuf) -> PathBuf {
     #[cfg(target_os = "windows")]
     let python_bin_path = download_dir.join("python/python.exe");
     #[cfg(not(target_os = "windows"))]
     let python_bin_path = download_dir.join("python/bin/python3");
     python_bin_path
+}
+
+/// Returns the path to a binary inside a venv
+pub fn _venv_binary_path(binary_name: &str, venv_path: &std::path::PathBuf) -> std::path::PathBuf {
+    let venv_bin_path = venv_path.join(if IS_WINDOWS { "Scripts" } else { "bin" });
+    let binary_path = venv_bin_path.join(if IS_WINDOWS {
+        format!("{binary_name}.exe")
+    } else {
+        binary_name.to_string()
+    });
+    return binary_path;
 }
 
 pub async fn download(link: &str, path: &Path) -> miette::Result<PathBuf> {

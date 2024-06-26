@@ -5,7 +5,7 @@ use miette::IntoDiagnostic;
 
 use crate::{
     github::Version,
-    utils::{_ensure_microvenv, ensure_python},
+    utils::{_ensure_microvenv, _venv_binary_path, ensure_python},
     MICROVENV_PATH,
 };
 
@@ -33,6 +33,20 @@ pub async fn create_env(python_bin_path: PathBuf, venv_path: &PathBuf) -> miette
             &MICROVENV_PATH.to_string_lossy().into_owned(),
             &venv_path.to_string_lossy().into_owned(),
         ])
+        .output()
+        .into_diagnostic()?;
+
+    if !stdout.status.success() {
+        miette::bail!(format!(
+            "Error: unable to create venv!\nStdout: {}\nStderr: {}",
+            String::from_utf8_lossy(&stdout.stdout),
+            String::from_utf8_lossy(&stdout.stderr),
+        ));
+    }
+
+    let venv_python_path = _venv_binary_path("python", venv_path);
+    let stdout = Command::new(format!("{}", python_bin_path.to_string_lossy()))
+        .args([&venv_python_path.to_string_lossy(), "-m", "ensurepip"])
         .output()
         .into_diagnostic()?;
 

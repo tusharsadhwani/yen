@@ -149,6 +149,12 @@ def ensure_python(python_version: str) -> tuple[str, str]:
 def create_venv(python_bin_path: str, venv_path: str) -> None:
     _ensure_microvenv()
     subprocess.run([python_bin_path, MICROVENV_PATH, venv_path], check=True)
+    venv_python_path = _venv_binary_path("python", venv_path)
+    subprocess.run(
+        [venv_python_path, "-m", "ensurepip"],
+        check=True,
+        capture_output=True,
+    )
 
 
 def _venv_binary_path(binary_name: str, venv_path: str) -> str:
@@ -193,11 +199,17 @@ def install_package(
     create_venv(python_bin_path, venv_path)
 
     venv_python_path = _venv_binary_path("python", venv_path)
-    subprocess.run(
-        [venv_python_path, "-m", "pip", "install", package_name],
-        check=True,
-        capture_output=True,
-    )
+    try:
+        subprocess.run(
+            [venv_python_path, "-m", "pip", "install", package_name],
+            check=True,
+            capture_output=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        print(exc.stdout.decode())
+        print("---")
+        print(exc.stderr.decode())
+        raise
 
     if is_module:
         with open(shim_path, "w") as file:
