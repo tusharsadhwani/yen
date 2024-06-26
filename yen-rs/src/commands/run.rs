@@ -6,7 +6,7 @@ use std::{
 use clap::Parser;
 use miette::IntoDiagnostic;
 
-use crate::{github::Version, utils::ensure_python, DEFAULT_PYTHON_VERSION, PACKAGE_INSTALLS_PATH};
+use crate::{github::Version, utils::ensure_python, DEFAULT_PYTHON_VERSION};
 
 use super::install::install_package;
 
