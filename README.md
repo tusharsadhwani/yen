@@ -1,6 +1,57 @@
 # yen
 
-The easiest Python environment manager. Create virtual environments for any Python version, without needing Python pre-installed.
+The last Python environment manager you'll ever need.
+
+![Credits: xkcd.com/1987](https://imgs.xkcd.com/comics/python_environment.png)
+
+We're finally putting an end to this XKCD.
+
+## So what can `yen` do?
+
+- Get any Python version running instantly with just 1 command:
+
+  ```console
+  $ python
+  'python': command not found
+
+  $ yen exec --python 3.12
+  Downloading 3.12.3 ━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 17.4/17.4 MB • 29.1 MB/s
+  Python 3.12.3 (main, Apr 15 2024, 17:43:11) [Clang 17.0.6 ] on darwin
+  Type "help", "copyright", "credits" or "license" for more information.
+  >>> exit()
+
+  # Cached for subsequent uses:
+  $ yen exec --python 3.12
+  Python 3.12.3 (main, Apr 15 2024, 17:43:11) [Clang 17.0.6 ] on darwin
+  Type "help", "copyright", "credits" or "license" for more information.
+  >>>
+  ```
+
+  Works on Windows, MacOS and Linux (`libc` and `musl`), on Intel and ARM chips.
+
+- Instant `venv` creation: Thanks to `microvenv`, `yen` can create virutal
+  environments much faster than the builtin `venv` module:
+
+  ```console
+  $ yen create venv -p 3.9
+  Created venv with Python 3.9.18 ✨
+
+  $ source venv/bin/activate
+
+  (venv) $ python --version
+  Python 3.9.18
+  ```
+
+- Zero dependency: No need to have Python installed, no need to look into `apt`,
+  `homebrew` etc., just run one shell command to get `yen` set up locally.
+
+- Python script management: Never run `pip install` to get a tool like `ruff`,
+  `awscli` etc. in the global Python environment ever again.
+
+**Essentially, `yen` lets you substitute various other Python environment
+management tools such as `pyenv`, `pipx` and `virtualenv`, with a single static binary.**
+
+Running Python code on any machine has never been this easy.
 
 ## Installation
 
@@ -26,35 +77,69 @@ Get the tool by running the following command:
   curl -L yen.tushar.lol/install.ps1 | Invoke-Expression
   ```
 
-or if you prefer, get it by `pip` or `pipx`:
+or if you prefer, get it via `pip`:
 
 ```bash
 pip install yen
 ```
 
+or `pipx`:
+
 ```bash
-pipx run yen create -p 3.12
+pipx run yen
 ```
+
+> Yeah, if you already have `yen`, you can do `yen run yen` and that works.
+> But don't do that.
+
+You can also grab the binary from [GitHub releases](https://github.com/tusharsadhwani/yen/releases).
 
 ## Usage
 
 ```console
 $ yen list
 Available Pythons:
-3.12.1
-3.11.7
-3.10.13
-3.9.18
-3.8.18
+3.12.3
+3.11.9
+3.10.14
+3.9.19
+3.8.19
 
 $ yen create venv -p 3.12
-Downloading 3.12.1 ━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 17.4/17.4 MB • 12.4 MB/s • 0:00:00
-Created venv with Python 3.12.1 ✨
+Downloading 3.12.3 ━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 17.4/17.4 MB • 12.4 MB/s
+Created venv with Python 3.12.3 ✨
 
-$ source venv/bin/activate
+$ yen install meowsay
+Installed package meowsay with Python 3.12.3 ✨
 
-(venv) $ python --version
-Python 3.12.1
+$ meowsay hello!
+ ________
+< hello! >
+ --------
+        \      |\---/|
+         \     | ,_, |
+                \_`_/-..----.
+             ___/ `   ' ,\"\"+ \  sk
+            (__...'   __\    |`.___.';
+              (_,...'(_,.`__)/'.....+
+
+$ yen run --python 3.9 wttr
+Weather report: Milano, Italy
+
+     \  /       Partly cloudy
+   _ /"".-.     20 °C
+     \_(   ).   ↑ 4 km/h
+     /(___(__)  10 km
+                0.0 mm
+
+$ wttr paris
+Weather report: paris
+
+      \   /     Sunny
+       .-.      +22(25) °C
+    ― (   ) ―   ↓ 7 km/h
+       `-’      10 km
+      /   \     0.0 mm
 ```
 
 > By default the python-installation will be done in ~/.yen_pythons.
@@ -62,14 +147,21 @@ Python 3.12.1
 
 ## Local Development / Testing
 
-- Create and activate a virtual environment
+- Run `yen create venv` and `venv/bin/activate`
 - Run `pip install -r requirements-dev.txt` to do an editable install
+- Verify that you're now pointing at the correct `yen`:
+
+  ```console
+  $ which yen
+  /home/your_name/code/yen/venv/bin/yen
+  ```
+
 - Run `pytest` to run tests
 
-To run rust tests:
+To run Rust tests:
 
 - Compile the rust project: `cd yen-rs && cargo build`
-- Add `yen-rs` to `PATH`: `export YEN_RUST_PATH=./yen-rs/target/debug/yen-rs`
+- Run `export YEN_RUST_PATH=./yen-rs/target/debug/yen-rs`
 - Run `pytest`, and ensure that number of tests ran has doubled.
 
 ### `microvenv.py` and `userpath.pyz`
@@ -94,6 +186,7 @@ Make sure to bump the version in `setup.cfg`.
 Then run the following commands:
 
 ```bash
+pip install setuptools wheel twine
 rm -rf build dist
 python setup.py sdist bdist_wheel
 ```
