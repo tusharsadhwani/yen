@@ -6,4 +6,5 @@ dist
 .tox
 .coverage*
 # files generated during tests
+testvenv
 tests/yen_packages

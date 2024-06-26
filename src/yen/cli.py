@@ -126,7 +126,7 @@ def cli() -> int:
         executable_name = args.module or args.binary or args.package_name
         is_module = args.module is not None
         try:
-            already_installed = install_package(
+            _, already_installed = install_package(
                 args.package_name,
                 python_bin_path,
                 executable_name,
@@ -166,7 +166,7 @@ def cli() -> int:
 
         # TODO: add yaspin?
         try:
-            already_installed = install_package(
+            shim_path, _ = install_package(
                 args.package_name,
                 python_bin_path,
                 executable_name=args.package_name,
@@ -174,12 +174,12 @@ def cli() -> int:
         except ExecutableDoesNotExist:
             print(
                 f"Error: package {args.package_name} doesn't contain a binary named"
-                f" {executable_name}. Consider passing `--binary` or `--module` flags.",
+                f" {args.package_name}.",
                 file=sys.stderr,
             )
             return 4
 
-        run_package(args.package_name, args.run_args)
+        run_package(shim_path, args.run_args)
 
     elif args.command == "use":
         try:

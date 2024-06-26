@@ -158,15 +158,24 @@ def install_package(
     *,
     is_module: bool = False,
     force_reinstall: bool = False,
-) -> bool:
+) -> tuple[str, bool]:
     os.makedirs(PACKAGE_INSTALLS_PATH, exist_ok=True)
+
+    is_windows = platform.system() == "Windows"
+    shim_path = os.path.join(PACKAGE_INSTALLS_PATH, package_name)
+    if is_windows:
+        if is_module:
+            shim_path += ".bat"
+        else:
+            shim_path += ".exe"
 
     venv_name = f"venv_{package_name}"
     venv_path = os.path.join(PACKAGE_INSTALLS_PATH, venv_name)
-    if os.path.exists(venv_path):
+    if os.path.exists(shim_path):
         if not force_reinstall:
-            return True  # True as in package already existed
+            return shim_path, True  # True as in package already existed
         else:
+            os.remove(shim_path)
             shutil.rmtree(venv_path)
 
     create_venv(python_bin_path, venv_path)
@@ -178,12 +187,7 @@ def install_package(
         capture_output=True,
     )
 
-    is_windows = platform.system() == "Windows"
-    shim_path = os.path.join(PACKAGE_INSTALLS_PATH, package_name)
     if is_module:
-        if is_windows:
-            shim_path += ".bat"
-
         with open(shim_path, "w") as file:
             if is_windows:
                 file.write(f"@echo off\n{venv_python_path} -m {package_name} %*")
@@ -192,9 +196,6 @@ def install_package(
 
         os.chmod(shim_path, 0o777)
     else:
-        if is_windows:
-            shim_path += ".exe"
-
         executable_path = _venv_binary_path(executable_name, venv_path)
         if not os.path.exists(executable_path):
             # cleanup the venv created
@@ -204,11 +205,10 @@ def install_package(
         # the created binary is always moveable
         shutil.move(executable_path, shim_path)
 
-    return False  # False as in package didn't exist and was just installed
+    return shim_path, False  # False as in package didn't exist and was just installed
 
 
-def run_package(package_name: str, args: list[str]) -> None:
-    shim_path = os.path.join(PACKAGE_INSTALLS_PATH, package_name)
+def run_package(shim_path: str, args: list[str]) -> None:
     subprocess.run([shim_path, *args])
 
 
