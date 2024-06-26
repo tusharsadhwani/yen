@@ -17,7 +17,7 @@ async fn ensurepath() -> miette::Result<()> {
     _ensure_userpath().await?;
 
     let python_bin_path = find_or_download_python().await?;
-    println!("{python_bin_path}");
+    println!("{python_bin_path:?}");
     let stdout = Command::new(format!("{}", python_bin_path.to_string_lossy()))
         .args([
             &USERPATH_PATH.to_string_lossy(),
