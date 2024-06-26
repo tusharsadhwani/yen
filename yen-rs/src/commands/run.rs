@@ -30,9 +30,9 @@ pub async fn execute(args: Args) -> miette::Result<()> {
     let (_, python_bin_path) = ensure_python(args.python).await?;
 
     let package_name = args.package_name;
-    install_package(&package_name, python_bin_path, &package_name, false, false).await?;
+    let (shim_path, _) =
+        install_package(&package_name, python_bin_path, &package_name, false, false).await?;
 
-    let shim_path = PACKAGE_INSTALLS_PATH.join(package_name);
     let output = Command::new(shim_path)
         .args(args.run_args)
         .stdin(Stdio::inherit())
