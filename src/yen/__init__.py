@@ -206,17 +206,11 @@ def install_package(
     create_venv(python_bin_path, venv_path)
 
     venv_python_path = _venv_binary_path("python", venv_path)
-    try:
-        subprocess.run(
-            [venv_python_path, "-m", "pip", "install", package_name],
-            check=True,
-            capture_output=True,
-        )
-    except subprocess.CalledProcessError as exc:
-        print(exc.stdout.decode())
-        print("---")
-        print(exc.stderr.decode())
-        raise
+    subprocess.run(
+        [venv_python_path, "-m", "pip", "install", package_name],
+        check=True,
+        capture_output=True,
+    )
 
     if is_module:
         with open(shim_path, "w") as file:
