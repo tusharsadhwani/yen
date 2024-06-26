@@ -35,33 +35,43 @@ pub async fn ensure_python(version: Version) -> miette::Result<(Version, PathBuf
     if !PYTHON_INSTALLS_PATH.exists() {
         fs::create_dir(PYTHON_INSTALLS_PATH.to_path_buf()).into_diagnostic()?;
     }
+    for path in std::fs::read_dir(PYTHON_INSTALLS_PATH.to_path_buf()).into_diagnostic()? {
+        let Ok(python_folder) = path else {
+            continue;
+        };
 
-    let (version, link) = resolve_python_version(version).await?;
-
-    let download_dir = PYTHON_INSTALLS_PATH.join(version.to_string());
-
-    let python_bin_path = _python_bin_path(&download_dir);
-    if python_bin_path.exists() {
+        let resolved_python_version = python_folder.file_name().to_string_lossy().into_owned();
+        if !resolved_python_version.starts_with(&version.to_string()) {
+            continue;
+        }
+        let Ok(version) = Version::from_str(&resolved_python_version) else {
+            continue;
+        };
+        let python_bin_path = _python_bin_path(&python_folder.path());
         return Ok((version, python_bin_path));
     }
 
+    let (version, link) = resolve_python_version(version).await?;
+    let download_dir = PYTHON_INSTALLS_PATH.join(version.to_string());
     if !download_dir.exists() {
         fs::create_dir_all(&download_dir).into_diagnostic()?;
     }
     let downloaded_file = download(link.as_str(), &download_dir).await?;
-
     let file = File::open(downloaded_file).into_diagnostic()?;
-
     Archive::new(GzDecoder::new(file))
-        .unpack(download_dir)
+        .unpack(&download_dir)
         .into_diagnostic()?;
 
+    let python_bin_path = _python_bin_path(&download_dir);
     Ok((version, python_bin_path))
 }
 
 /// Finds and returns any Python binary from `PYTHON_INSTALLS_PATH`.
 /// If no Pythons exist, downloads the default version and returns that.
 pub async fn find_or_download_python() -> miette::Result<PathBuf> {
+    if !PYTHON_INSTALLS_PATH.exists() {
+        fs::create_dir(PYTHON_INSTALLS_PATH.to_path_buf()).into_diagnostic()?;
+    }
     for path in std::fs::read_dir(PYTHON_INSTALLS_PATH.to_path_buf()).into_diagnostic()? {
         let Ok(python_folder) = path else {
             continue;

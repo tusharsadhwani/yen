@@ -110,13 +110,15 @@ def ensure_python(python_version: str) -> tuple[str, str]:
     """Checks if given Python version exists locally. If not, downloads it."""
     os.makedirs(PYTHON_INSTALLS_PATH, exist_ok=True)
 
+    for python_folder_name in os.listdir(PYTHON_INSTALLS_PATH):
+        python_folder = os.path.join(PYTHON_INSTALLS_PATH, python_folder_name)
+        if python_folder_name.startswith(python_version):
+            # already installed
+            python_bin_path = _python_bin_path(python_folder)
+            return python_folder_name, python_bin_path
+
     python_version, download_link = resolve_python_version(python_version)
     download_directory = os.path.join(PYTHON_INSTALLS_PATH, python_version)
-
-    python_bin_path = _python_bin_path(download_directory)
-    if os.path.exists(python_bin_path):
-        # already installed
-        return python_version, python_bin_path
 
     os.makedirs(download_directory, exist_ok=True)
     downloaded_filepath = download(
@@ -141,8 +143,9 @@ def ensure_python(python_version: str) -> tuple[str, str]:
         tar.extractall(download_directory)
 
     os.remove(downloaded_filepath)
-    assert os.path.exists(python_bin_path)
 
+    python_bin_path = _python_bin_path(download_directory)
+    assert os.path.exists(python_bin_path)
     return python_version, python_bin_path
 
 
