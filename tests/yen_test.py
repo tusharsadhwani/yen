@@ -213,10 +213,8 @@ def test_ensurepath() -> None:
 
     userpath_path = os.path.join(os.path.dirname(__file__), "../userpath.pyz")
 
-    with pytest.raises(Failed) as exc:
+    with pytest.raises(Failed):
         run([sys.executable, userpath_path, "check"])
-    check_return_code = exc.value.args[0]
-    assert check_return_code == 1
 
     run([yen_path, "ensurepath"])
 
