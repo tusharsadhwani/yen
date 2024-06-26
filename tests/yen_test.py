@@ -205,11 +205,12 @@ def test_yen_run(yen_path: str) -> None:
 
 
 def test_ensurepath() -> None:
-    # [-1] will test rust binary in build, and python package in tox tests
-    (yen_path,) = yen_paths[-1]
     if "CI" not in os.environ:
         # Don't want to muddle the PATH locally.
         pytest.skip()
+
+    # [-1] will test rust binary in build, and python package in tox tests
+    (yen_path,) = yen_paths[-1]
 
     userpath_path = os.path.join(os.path.dirname(__file__), "../userpath.pyz")
 
