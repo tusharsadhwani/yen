@@ -22,7 +22,7 @@ pub struct Args {
     python: Version,
 
     /// Arguments to pass to the command invocation
-    #[arg(required = true, num_args = 0..)]
+    #[arg(num_args = 0..)]
     run_args: Vec<String>,
 }
 
