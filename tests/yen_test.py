@@ -56,17 +56,17 @@ def run(
     combined_output: bool = False,
     cwd: str | None = None,
 ) -> str:
-    executable = command[0]
-    if not os.path.isabs(executable):
-        executable = os.path.abspath(os.path.join(cwd or ".", executable))
-
-    if platform.system() == "Windows" and not executable.endswith((".bat", ".exe")):
-        if os.path.exists(executable + ".bat"):
-            executable += ".bat"
+    cmd = command[0]
+    if platform.system() == "Windows" and not cmd.lower().endswith((".bat", ".exe")):
+        if os.path.exists(cmd + ".bat"):
+            cmd += ".bat"
         else:
-            executable += ".exe"
+            cmd += ".exe"
 
-    command[0] = executable
+    if not os.path.isabs(cmd):
+        cmd = os.path.abspath(os.path.join(cwd or ".", cmd))
+
+    command[0] = cmd
     try:
         output = subprocess.check_output(
             command,
@@ -212,9 +212,7 @@ def test_ensurepath() -> None:
     # [-1] will test rust binary in build, and python package in tox tests
     (yen_path,) = yen_paths[-1]
 
-    userpath_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "userpath.pyz")
-    )
+    userpath_path = os.path.join(os.path.dirname(__file__), "../userpath.pyz")
 
     with pytest.raises(Failed):
         run([sys.executable, userpath_path, "check", PACKAGES_INSTALL_PATH])
