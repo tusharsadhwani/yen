@@ -121,7 +121,12 @@ pub async fn install_package(
     let mut shim_path = PACKAGE_INSTALLS_PATH.join(&package_name);
     if IS_WINDOWS {
         let bat_shim_path = PathBuf::from(shim_path.to_string_lossy().into_owned() + ".bat");
-        if bat_shim_path.exists() {
+        // This is somewhat of a hack.
+        // For the condition where shim_path exists and we do `yen run`,
+        // `is_module` is false but we still want to return early.
+        // But for the condition where we try to create the module the first time,
+        // `is_module` will be true, and in that case we want to use `.bat` as well
+        if is_module || bat_shim_path.exists() {
             shim_path = bat_shim_path;
         } else {
             shim_path = PathBuf::from(shim_path.to_string_lossy().into_owned() + ".exe");
