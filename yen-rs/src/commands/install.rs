@@ -1,4 +1,4 @@
-use std::{os::unix::fs::PermissionsExt, path::PathBuf, process::Command, str::FromStr};
+use std::{path::PathBuf, process::Command, str::FromStr};
 
 use clap::Parser;
 use miette::IntoDiagnostic;
@@ -175,6 +175,8 @@ pub async fn install_package(
 
         #[cfg(not(target_os = "windows"))]
         {
+            use std::os::unix::fs::PermissionsExt;
+
             let mut perms = std::fs::metadata(&shim_path)
                 .into_diagnostic()?
                 .permissions();
