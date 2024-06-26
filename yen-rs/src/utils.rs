@@ -79,7 +79,7 @@ pub async fn _ensure_userpath() -> miette::Result<()> {
     }
 
     if !YEN_BIN_PATH.exists() {
-        std::fs::create_dir(YEN_BIN_PATH.to_path_buf()).into_diagnostic()?;
+        std::fs::create_dir_all(YEN_BIN_PATH.to_path_buf()).into_diagnostic()?;
     }
 
     let userpath_content = YEN_CLIENT
