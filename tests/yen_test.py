@@ -47,6 +47,9 @@ yen_paths = yen_python_and_rust_path()
 parametrize_python_and_rust_path = pytest.mark.parametrize(("yen_path",), yen_paths)
 
 
+class Failed(Exception): ...
+
+
 def run(
     command: list[str],
     *,
@@ -73,7 +76,7 @@ def run(
         )
     except subprocess.CalledProcessError as exc:
         print(f"Subprocess stdout: {exc.stdout}\nstderr: {exc.stderr}")
-        raise
+        raise Failed(exc.returncode)
 
     return output
 
@@ -199,3 +202,23 @@ def test_yen_run(yen_path: str) -> None:
     install_output = run([yen_path, "install", "astmath"])
     assert "astmath" in install_output
     assert "already installed" in install_output
+
+
+def test_ensurepath() -> None:
+    # let's use rust path only, since we can only test this once
+    yen_path = yen_paths[1]
+    if "CI" not in os.environ:
+        # Don't want to muddle the PATH locally.
+        pytest.skip()
+
+    userpath_path = os.path.join(os.path.dirname(__file__), "../userpath.pyz")
+
+    with pytest.raises(Failed) as exc:
+        run([sys.executable, userpath_path, "check"])
+    check_return_code = exc.value.args[0]
+    assert check_return_code == 1
+
+    run([yen_path, "ensurepath"])
+
+    # Now check should not raise
+    run([sys.executable, userpath_path, "check"])
