@@ -9,8 +9,9 @@ if (-not (Test-Path $yenpath)) {
 # Download yen executable and save it to the .yen\bin directory
 $downloadUrl = "https://github.com/tusharsadhwani/yen/releases/latest/download/yen-rs-x86_64-pc-windows-msvc.exe"
 Invoke-WebRequest -Uri $downloadUrl -OutFile "$yenpath\yen.exe"
-# Download userpath too
+# Download userpath and microvenv too
 Invoke-WebRequest -Uri "https://yen.tushar.lol/userpath.pyz" -OutFile "$yenpath\userpath.pyz"
+Invoke-WebRequest -Uri "https://yen.tushar.lol/microvenv.py" -OutFile "$yenpath\microvenv.py"
 
 # Get the user's PATH without the system-wide PATH
 $userPath = (Get-ItemProperty -Path 'HKCU:\Environment' -Name 'Path').Path

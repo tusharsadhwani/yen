@@ -46,9 +46,9 @@ fi
 
 # Move yen to the install directory
 mkdir -p "$INSTALL_DIR"
-cp "$TEMP_FILE" "$INSTALL_DIR/yen"
+mv "$TEMP_FILE" "$INSTALL_DIR/yen"
 
-# Download userpath too
+# Download userpath and microvenv too
 USERPATH_URL="https://yen.tushar.lol/userpath.pyz"
 HTTP_CODE=$(curl -SL --progress-bar "$USERPATH_URL" --output "$TEMP_FILE" --write-out "%{http_code}")
 if [ ${HTTP_CODE} -lt 200 ] || [ ${HTTP_CODE} -gt 299 ]; then
@@ -56,7 +56,16 @@ if [ ${HTTP_CODE} -lt 200 ] || [ ${HTTP_CODE} -gt 299 ]; then
   exit 1
 fi
 mkdir -p "$INSTALL_DIR"
-cp "$TEMP_FILE" "$INSTALL_DIR/userpath.pyz"
+mv "$TEMP_FILE" "$INSTALL_DIR/userpath.pyz"
+
+MICROVENV_URL="https://yen.tushar.lol/microvenv.py"
+HTTP_CODE=$(curl -SL --progress-bar "$MICROVENV_URL" --output "$TEMP_FILE" --write-out "%{http_code}")
+if [ ${HTTP_CODE} -lt 200 ] || [ ${HTTP_CODE} -gt 299 ]; then
+  echo "error: '${MICROVENV_URL}' is not available"
+  exit 1
+fi
+mkdir -p "$INSTALL_DIR"
+mv "$TEMP_FILE" "$INSTALL_DIR/microvenv.py"
 
 
 update_shell() {
