@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import os.path
+import subprocess
 import sys
 from typing import Literal
 
@@ -12,18 +13,16 @@ from yen import (
     PACKAGE_INSTALLS_PATH,
     ExecutableDoesNotExist,
     check_path,
-    create_symlink,
     create_venv,
     ensure_python,
     ensurepath,
     install_package,
-    run_package,
 )
 from yen.github import NotAvailable, list_pythons
 
 
 class YenArgs:
-    command: Literal["list", "ensurepath", "create", "install", "run", "use"]
+    command: Literal["list", "ensurepath", "create", "install", "run", "exec"]
     python: str
     venv_path: str
     package_name: str
@@ -68,8 +67,8 @@ def cli() -> int:
         nargs="*",
     )
 
-    use_parser = subparsers.add_parser("use")
-    use_parser.add_argument("-p", "--python", required=True)
+    exec_parser = subparsers.add_parser("exec")
+    exec_parser.add_argument("-p", "--python", default=DEFAULT_PYTHON_VERSION)
 
     args = parser.parse_args(namespace=YenArgs)
 
@@ -179,9 +178,9 @@ def cli() -> int:
             )
             return 4
 
-        run_package(shim_path, args.run_args)
+        return subprocess.call([shim_path, *args.run_args])
 
-    elif args.command == "use":
+    elif args.command == "exec":
         try:
             python_version, python_bin_path = ensure_python(args.python)
         except NotAvailable:
@@ -192,7 +191,6 @@ def cli() -> int:
             )
             return 1
 
-        create_symlink(python_bin_path, python_version)
-        print(f"\033[1m{python_version}\033[m created 🐍")
+        return subprocess.call([python_bin_path])
 
     return 0

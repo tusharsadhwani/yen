@@ -231,18 +231,3 @@ def install_package(
         shutil.move(executable_path, shim_path)
 
     return shim_path, False  # False as in package didn't exist and was just installed
-
-
-def run_package(shim_path: str, args: list[str]) -> None:
-    subprocess.run([shim_path, *args])
-
-
-def create_symlink(python_bin_path: str, python_version: str) -> None:
-    python_version = "python" + ".".join(python_version.split(".")[:2])
-    symlink_path = os.path.join(PYTHON_INSTALLS_PATH, python_version)
-
-    if os.path.exists(symlink_path):
-        os.remove(symlink_path)
-
-    os.symlink(python_bin_path, symlink_path)
-    check_path(PYTHON_INSTALLS_PATH)

@@ -7,7 +7,7 @@ use env_logger::{Builder, WriteStyle};
 use lazy_static::lazy_static;
 use log::LevelFilter;
 
-use commands::{create, ensurepath, install, list, run};
+use commands::{create, ensurepath, exec, install, list, run};
 use regex::Regex;
 use reqwest::Client;
 
@@ -70,6 +70,7 @@ enum Command {
     #[clap(alias = "c")]
     Create(create::Args),
     Ensurepath(ensurepath::Args),
+    Exec(exec::Args),
     Install(install::Args),
     Run(run::Args),
 }
@@ -102,6 +103,7 @@ async fn execute(args: Args) -> miette::Result<()> {
     match args.command {
         Command::Create(args) => create::execute(args).await,
         Command::Ensurepath(args) => ensurepath::execute(args).await,
+        Command::Exec(args) => exec::execute(args).await,
         Command::List(args) => list::execute(args).await,
         Command::Install(args) => install::execute(args).await,
         Command::Run(args) => run::execute(args).await,
