@@ -162,7 +162,7 @@ def install_package(
     is_windows = platform.system() == "Windows"
     shim_path = os.path.join(PACKAGE_INSTALLS_PATH, package_name)
     if is_windows:
-        if is_module:
+        if os.path.exists(shim_path + ".bat"):
             shim_path += ".bat"
         else:
             shim_path += ".exe"

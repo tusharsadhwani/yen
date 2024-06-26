@@ -120,8 +120,9 @@ pub async fn install_package(
 ) -> miette::Result<(std::path::PathBuf, bool)> {
     let mut shim_path = PACKAGE_INSTALLS_PATH.join(&package_name);
     if IS_WINDOWS {
-        if is_module {
-            shim_path = PathBuf::from(shim_path.to_string_lossy().into_owned() + ".bat");
+        let bat_shim_path = PathBuf::from(shim_path.to_string_lossy().into_owned() + ".bat");
+        if bat_shim_path.exists() {
+            shim_path = bat_shim_path;
         } else {
             shim_path = PathBuf::from(shim_path.to_string_lossy().into_owned() + ".exe");
         }
