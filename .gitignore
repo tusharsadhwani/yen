@@ -4,4 +4,7 @@ venv*
 build
 dist
 .tox
-.coverage
+.coverage*
+# files generated during tests
+testvenv
+tests/yen_packages

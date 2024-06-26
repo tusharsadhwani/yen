@@ -10,6 +10,8 @@ mkdir "%yenpath%" 2>nul
 REM Download yen executable and save it to the .yen\bin directory
 SET "download_url=https://github.com/tusharsadhwani/yen/releases/latest/download/yen-rs-x86_64-pc-windows-msvc.exe"
 curl -SL --progress-bar "%download_url%" --output "%yenpath%\yen.exe"
+REM Download userpath too
+curl -SL --progress-bar "https://yen.tushar.lol/userpath.pyz" --output "%yenpath%\userpath.pyz"
 
 REM Get the user's PATH without the system-wide PATH
 for /f "skip=2 tokens=2,*" %%A in ('reg query HKCU\Environment /v PATH') do (

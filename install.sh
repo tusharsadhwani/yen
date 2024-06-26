@@ -22,8 +22,6 @@ fi
 
 BINARY="yen-rs-${ARCH}-${PLATFORM}"
 
-DOWNLOAD_URL=https://github.com/${REPO}/releases/latest/download/${BINARY}
-
 printf "This script will automatically download and install yen for you.\nGetting it from this url: $DOWNLOAD_URL\nThe binary will be installed into '$INSTALL_DIR'\n"
 
 if ! hash curl 2> /dev/null; then
@@ -39,6 +37,7 @@ cleanup() {
 
 trap cleanup EXIT
 
+DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${BINARY}"
 HTTP_CODE=$(curl -SL --progress-bar "$DOWNLOAD_URL" --output "$TEMP_FILE" --write-out "%{http_code}")
 if [ ${HTTP_CODE} -lt 200 ] || [ ${HTTP_CODE} -gt 299 ]; then
   echo "error: '${DOWNLOAD_URL}' is not available"
@@ -48,6 +47,17 @@ fi
 # Move yen to the install directory
 mkdir -p "$INSTALL_DIR"
 cp "$TEMP_FILE" "$INSTALL_DIR/yen"
+
+# Download userpath too
+USERPATH_URL="https://yen.tushar.lol/userpath.pyz"
+HTTP_CODE=$(curl -SL --progress-bar "$USERPATH_URL" --output "$TEMP_FILE" --write-out "%{http_code}")
+if [ ${HTTP_CODE} -lt 200 ] || [ ${HTTP_CODE} -gt 299 ]; then
+  echo "error: '${USERPATH_URL}' is not available"
+  exit 1
+fi
+mkdir -p "$INSTALL_DIR"
+cp "$TEMP_FILE" "$INSTALL_DIR/userpath.pyz"
+
 
 update_shell() {
     FILE=$1

@@ -6,7 +6,6 @@ import os.path
 import signal
 from functools import partial
 from threading import Event
-from typing import Iterable
 from urllib.request import urlopen
 
 from rich.progress import (
