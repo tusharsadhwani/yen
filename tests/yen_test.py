@@ -215,9 +215,9 @@ def test_ensurepath() -> None:
     userpath_path = os.path.join(os.path.dirname(__file__), "../userpath.pyz")
 
     with pytest.raises(Failed):
-        run([sys.executable, userpath_path, "check"])
+        run([sys.executable, userpath_path, "check", PACKAGES_INSTALL_PATH])
 
     run([yen_path, "ensurepath"])
 
     # Now check should not raise
-    run([sys.executable, userpath_path, "check"])
+    run([sys.executable, userpath_path, "check", PACKAGES_INSTALL_PATH])
