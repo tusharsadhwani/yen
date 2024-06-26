@@ -217,10 +217,11 @@ def test_ensurepath() -> None:
     with pytest.raises(Failed):
         run([sys.executable, userpath_path, "check", PACKAGES_INSTALL_PATH])
 
+    assert userpath.in_current_path(PACKAGES_INSTALL_PATH) is False
+    assert userpath.in_new_path(PACKAGES_INSTALL_PATH) is False
+
     run([yen_path, "ensurepath"])
 
-    print(f"{userpath.in_current_path(PACKAGES_INSTALL_PATH) = }")
-    print(f"{userpath.in_new_path(PACKAGES_INSTALL_PATH) = }")
-
-    # Now check should not raise
-    run([sys.executable, userpath_path, "check", PACKAGES_INSTALL_PATH])
+    # Since we can't really restart the shell, we'll do this instead
+    assert userpath.in_current_path(PACKAGES_INSTALL_PATH) is False
+    assert userpath.in_new_path(PACKAGES_INSTALL_PATH) is True
