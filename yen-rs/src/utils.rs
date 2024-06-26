@@ -16,7 +16,8 @@ use tar::Archive;
 
 use crate::{
     github::{resolve_python_version, Version},
-    DEFAULT_PYTHON_VERSION, PYTHON_INSTALLS_PATH, USERPATH_PATH, YEN_BIN_PATH, YEN_CLIENT,
+    DEFAULT_PYTHON_VERSION, MICROVENV_PATH, PYTHON_INSTALLS_PATH, USERPATH_PATH, YEN_BIN_PATH,
+    YEN_CLIENT,
 };
 
 #[cfg(target_os = "linux")]
@@ -92,6 +93,29 @@ pub async fn _ensure_userpath() -> miette::Result<()> {
         .into_diagnostic()?;
 
     std::fs::write(USERPATH_PATH.to_path_buf(), userpath_content).into_diagnostic()?;
+    Ok(())
+}
+
+/// Downloads `microvenv.py`, if it doesn't exist in `YEN_BIN_PATH`.
+pub async fn _ensure_microvenv() -> miette::Result<()> {
+    if MICROVENV_PATH.exists() {
+        return Ok(());
+    }
+
+    if !YEN_BIN_PATH.exists() {
+        std::fs::create_dir_all(YEN_BIN_PATH.to_path_buf()).into_diagnostic()?;
+    }
+
+    let microvenv_content = YEN_CLIENT
+        .get("https://yen.tushar.lol/microvenv.py")
+        .send()
+        .await
+        .into_diagnostic()?
+        .bytes()
+        .await
+        .into_diagnostic()?;
+
+    std::fs::write(MICROVENV_PATH.to_path_buf(), microvenv_content).into_diagnostic()?;
     Ok(())
 }
 

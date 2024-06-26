@@ -26,6 +26,7 @@ PACKAGE_INSTALLS_PATH = os.path.abspath(
 )
 
 USERPATH_PATH = os.path.join(YEN_BIN_PATH, "userpath.pyz")
+MICROVENV_PATH = os.path.join(YEN_BIN_PATH, "microvenv.py")
 
 DEFAULT_PYTHON_VERSION = "3.12"
 
@@ -60,6 +61,15 @@ def _ensure_userpath() -> None:
 
     os.makedirs(YEN_BIN_PATH, exist_ok=True)
     urlretrieve("http://yen.tushar.lol/userpath.pyz", filename=USERPATH_PATH)
+
+
+def _ensure_microvenv() -> None:
+    """Downloads `microvenv.py`, if it doesn't exist in `YEN_BIN_PATH`."""
+    if os.path.exists(MICROVENV_PATH):
+        return
+
+    os.makedirs(YEN_BIN_PATH, exist_ok=True)
+    urlretrieve("http://yen.tushar.lol/microvenv.py", filename=MICROVENV_PATH)
 
 
 def find_or_download_python() -> str:
@@ -137,9 +147,8 @@ def ensure_python(python_version: str) -> tuple[str, str]:
 
 
 def create_venv(python_bin_path: str, venv_path: str) -> None:
-    # TODO: bundle microvenv.pyz as a dependency, venv is genuinely too slow
-    # microvenv doesn't support windows, fallback to venv for that. teehee.
-    subprocess.run([python_bin_path, "-m", "venv", venv_path], check=True)
+    _ensure_microvenv()
+    subprocess.run([python_bin_path, MICROVENV_PATH, venv_path], check=True)
 
 
 def _venv_binary_path(binary_name: str, venv_path: str) -> str:

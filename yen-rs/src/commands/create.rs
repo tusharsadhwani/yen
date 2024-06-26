@@ -3,7 +3,11 @@ use std::{path::PathBuf, process::Command};
 use clap::Parser;
 use miette::IntoDiagnostic;
 
-use crate::{github::Version, utils::ensure_python};
+use crate::{
+    github::Version,
+    utils::{_ensure_microvenv, ensure_python},
+    MICROVENV_PATH,
+};
 
 /// Create venv with python version
 #[derive(Parser, Debug)]
@@ -23,8 +27,12 @@ pub async fn create_env(python_bin_path: PathBuf, venv_path: &PathBuf) -> miette
         miette::bail!("Error: {} already exists!", venv_path.to_string_lossy());
     }
 
+    _ensure_microvenv().await?;
     let stdout = Command::new(format!("{}", python_bin_path.to_string_lossy()))
-        .args(["-m", "venv", &format!("{}", venv_path.to_string_lossy())])
+        .args([
+            &MICROVENV_PATH.to_string_lossy().into_owned(),
+            &venv_path.to_string_lossy().into_owned(),
+        ])
         .output()
         .into_diagnostic()?;
 
