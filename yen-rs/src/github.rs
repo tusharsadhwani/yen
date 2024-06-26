@@ -118,7 +118,7 @@ impl MachineSuffix {
 
 const FALLBACK_RESPONSE_BYTES: &[u8] = include_bytes!("../../src/yen/fallback_release_data.json");
 
-async fn get_latest_python_release() -> miette::Result<Vec<String>> {
+async fn get_release_json() -> miette::Result<String> {
     let response = YEN_CLIENT
         .get(*GITHUB_API_URL)
         .send()
@@ -129,20 +129,27 @@ async fn get_latest_python_release() -> miette::Result<Vec<String>> {
     // Log the response body if the status is not successful
     let status_code = response.status().as_u16();
     let success = response.status().is_success();
-    let mut body = response.text().await.into_diagnostic()?;
+    let body = response.text().await.into_diagnostic()?;
     if !success {
         log::error!("Error response: {}\nStatus Code: {}", body, status_code);
-        let fallback_response = String::from_utf8_lossy(FALLBACK_RESPONSE_BYTES).into_owned();
-        body = fallback_response;
+        miette::bail!("Failed to fetch fallback data");
     }
 
+    Ok(body)
+}
+
+async fn get_latest_python_release() -> miette::Result<Vec<String>> {
+    let json = get_release_json()
+        .await
+        .unwrap_or(String::from_utf8_lossy(FALLBACK_RESPONSE_BYTES).into_owned());
+
     // Attempt to parse the JSON
-    let github_resp = match serde_json::from_str::<GithubResp>(&body) {
+    let github_resp = match serde_json::from_str::<GithubResp>(&json) {
         Ok(data) => data,
         Err(err) => {
             // Log the error and response body in case of JSON decoding failure
             log::error!("Error decoding JSON: {}", err);
-            log::error!("Response body: {}", body);
+            log::error!("Response body: {}", json);
             miette::bail!("JSON decoding error, check the logs for more info.");
         }
     };
