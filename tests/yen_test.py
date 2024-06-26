@@ -9,7 +9,7 @@ from textwrap import dedent
 from typing import Iterator
 
 import pytest
-
+import userpath
 
 PACKAGES_INSTALL_PATH = os.path.join(os.path.dirname(__file__), "yen_packages")
 
@@ -218,6 +218,9 @@ def test_ensurepath() -> None:
         run([sys.executable, userpath_path, "check", PACKAGES_INSTALL_PATH])
 
     run([yen_path, "ensurepath"])
+
+    print(f"{userpath.in_current_path(PACKAGES_INSTALL_PATH) = }")
+    print(f"{userpath.in_new_path(PACKAGES_INSTALL_PATH) = }")
 
     # Now check should not raise
     run([sys.executable, userpath_path, "check", PACKAGES_INSTALL_PATH])
