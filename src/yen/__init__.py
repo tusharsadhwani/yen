@@ -159,8 +159,6 @@ def install_package(
     is_module: bool = False,
     force_reinstall: bool = False,
 ) -> tuple[str, bool]:
-    os.makedirs(PACKAGE_INSTALLS_PATH, exist_ok=True)
-
     is_windows = platform.system() == "Windows"
     shim_path = os.path.join(PACKAGE_INSTALLS_PATH, package_name)
     if is_windows:
@@ -176,7 +174,7 @@ def install_package(
             return shim_path, True  # True as in package already existed
         else:
             os.remove(shim_path)
-            shutil.rmtree(venv_path)
+            shutil.rmtree(venv_path, ignore_errors=True)
 
     create_venv(python_bin_path, venv_path)
 

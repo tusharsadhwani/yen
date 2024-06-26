@@ -49,7 +49,7 @@ pub async fn execute(args: Args) -> miette::Result<()> {
     let is_module = args.module.is_some();
     let executable_name = args.module.or(args.binary).unwrap_or(package_name.clone());
 
-    let already_installed = install_package(
+    let (_, already_installed) = install_package(
         &package_name,
         python_bin_path,
         &executable_name,
@@ -117,14 +117,26 @@ pub async fn install_package(
     executable_name: &str,
     is_module: bool,
     force_reinstall: bool,
-) -> miette::Result<bool> {
+) -> miette::Result<(std::path::PathBuf, bool)> {
+    let mut shim_path = PACKAGE_INSTALLS_PATH.join(&package_name);
+    if IS_WINDOWS {
+        if is_module {
+            shim_path = PathBuf::from(shim_path.to_string_lossy().into_owned() + ".bat");
+        } else {
+            shim_path = PathBuf::from(shim_path.to_string_lossy().into_owned() + ".exe");
+        }
+    }
+
     let venv_name = format!("venv_{package_name}");
     let venv_path = PACKAGE_INSTALLS_PATH.join(venv_name);
-    if venv_path.exists() {
+    if shim_path.exists() {
         if !force_reinstall {
-            return Ok(true); // true as in package already exists
+            return Ok((shim_path, true)); // true as in package already exists
         } else {
-            std::fs::remove_dir_all(&venv_path).into_diagnostic()?;
+            std::fs::remove_file(&shim_path).into_diagnostic()?;
+            if venv_path.exists() {
+                std::fs::remove_dir_all(&venv_path).into_diagnostic()?;
+            }
         };
     };
 
@@ -146,12 +158,7 @@ pub async fn install_package(
         ));
     }
 
-    let mut shim_path = PACKAGE_INSTALLS_PATH.join(&package_name);
     if is_module {
-        if IS_WINDOWS {
-            shim_path = PathBuf::from(shim_path.to_string_lossy().into_owned() + ".bat");
-        }
-
         if IS_WINDOWS {
             std::fs::write(
                 &shim_path,
@@ -172,9 +179,6 @@ pub async fn install_package(
         perms.set_mode(0o777);
         std::fs::set_permissions(&shim_path, perms).into_diagnostic()?;
     } else {
-        if IS_WINDOWS {
-            shim_path = PathBuf::from(shim_path.to_string_lossy().into_owned() + ".exe");
-        }
         let executable_path = _venv_binary_path(&executable_name, &venv_path);
         if !executable_path.exists() {
             // cleanup the venv created
@@ -191,8 +195,8 @@ pub async fn install_package(
             }
         }
         // the created binary is always moveable
-        std::fs::rename(executable_path, shim_path).into_diagnostic()?;
+        std::fs::rename(&executable_path, &shim_path).into_diagnostic()?;
     }
 
-    Ok(false) // false as in it didn't already exist and was installed just now.
+    Ok((shim_path, false)) // false as in it didn't already exist and was installed just now.
 }
