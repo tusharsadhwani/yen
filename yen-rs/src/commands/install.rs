@@ -173,11 +173,14 @@ pub async fn install_package(
             .into_diagnostic()?;
         }
 
-        let mut perms = std::fs::metadata(&shim_path)
-            .into_diagnostic()?
-            .permissions();
-        perms.set_mode(0o777);
-        std::fs::set_permissions(&shim_path, perms).into_diagnostic()?;
+        #[cfg(not(target_os = "windows"))]
+        {
+            let mut perms = std::fs::metadata(&shim_path)
+                .into_diagnostic()?
+                .permissions();
+            perms.set_mode(0o777);
+            std::fs::set_permissions(&shim_path, perms).into_diagnostic()?;
+        }
     } else {
         let executable_path = _venv_binary_path(&executable_name, &venv_path);
         if !executable_path.exists() {
