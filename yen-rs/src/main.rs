@@ -44,6 +44,7 @@ lazy_static! {
         .expect("Failed to turn YEN_BIN_PATH into absolute")
     };
     static ref USERPATH_PATH: PathBuf = YEN_BIN_PATH.join("userpath.pyz");
+    static ref MICROVENV_PATH: PathBuf = YEN_BIN_PATH.join("microvenv.py");
     static ref YEN_CLIENT: Client = yen_client();
 }
 

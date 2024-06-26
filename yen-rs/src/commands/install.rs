@@ -5,16 +5,13 @@ use miette::IntoDiagnostic;
 
 use crate::{
     github::Version,
-    utils::{_ensure_userpath, ensure_python, find_or_download_python},
+    utils::{
+        _ensure_userpath, _venv_binary_path, ensure_python, find_or_download_python, IS_WINDOWS,
+    },
     DEFAULT_PYTHON_VERSION, PACKAGE_INSTALLS_PATH, USERPATH_PATH,
 };
 
 use super::create::create_env;
-
-#[cfg(target_os = "windows")]
-const IS_WINDOWS: bool = true;
-#[cfg(not(target_os = "windows"))]
-const IS_WINDOWS: bool = false;
 
 /// Install a Python package in an isolated environment.
 #[derive(Parser, Debug)]
@@ -99,16 +96,6 @@ async fn check_path(path: PathBuf) -> miette::Result<()> {
     }
 
     Ok(())
-}
-
-fn _venv_binary_path(binary_name: &str, venv_path: &std::path::PathBuf) -> std::path::PathBuf {
-    let venv_bin_path = venv_path.join(if IS_WINDOWS { "Scripts" } else { "bin" });
-    let binary_path = venv_bin_path.join(if IS_WINDOWS {
-        format!("{binary_name}.exe")
-    } else {
-        binary_name.to_string()
-    });
-    return binary_path;
 }
 
 pub async fn install_package(

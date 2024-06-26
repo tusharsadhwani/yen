@@ -26,6 +26,7 @@ PACKAGE_INSTALLS_PATH = os.path.abspath(
 )
 
 USERPATH_PATH = os.path.join(YEN_BIN_PATH, "userpath.pyz")
+MICROVENV_PATH = os.path.join(YEN_BIN_PATH, "microvenv.py")
 
 DEFAULT_PYTHON_VERSION = "3.12"
 
@@ -60,6 +61,15 @@ def _ensure_userpath() -> None:
 
     os.makedirs(YEN_BIN_PATH, exist_ok=True)
     urlretrieve("http://yen.tushar.lol/userpath.pyz", filename=USERPATH_PATH)
+
+
+def _ensure_microvenv() -> None:
+    """Downloads `microvenv.py`, if it doesn't exist in `YEN_BIN_PATH`."""
+    if os.path.exists(MICROVENV_PATH):
+        return
+
+    os.makedirs(YEN_BIN_PATH, exist_ok=True)
+    urlretrieve("http://yen.tushar.lol/microvenv.py", filename=MICROVENV_PATH)
 
 
 def find_or_download_python() -> str:
@@ -100,13 +110,15 @@ def ensure_python(python_version: str) -> tuple[str, str]:
     """Checks if given Python version exists locally. If not, downloads it."""
     os.makedirs(PYTHON_INSTALLS_PATH, exist_ok=True)
 
+    for python_folder_name in os.listdir(PYTHON_INSTALLS_PATH):
+        python_folder = os.path.join(PYTHON_INSTALLS_PATH, python_folder_name)
+        if python_folder_name.startswith(python_version):
+            # already installed
+            python_bin_path = _python_bin_path(python_folder)
+            return python_folder_name, python_bin_path
+
     python_version, download_link = resolve_python_version(python_version)
     download_directory = os.path.join(PYTHON_INSTALLS_PATH, python_version)
-
-    python_bin_path = _python_bin_path(download_directory)
-    if os.path.exists(python_bin_path):
-        # already installed
-        return python_version, python_bin_path
 
     os.makedirs(download_directory, exist_ok=True)
     downloaded_filepath = download(
@@ -131,15 +143,25 @@ def ensure_python(python_version: str) -> tuple[str, str]:
         tar.extractall(download_directory)
 
     os.remove(downloaded_filepath)
-    assert os.path.exists(python_bin_path)
 
+    python_bin_path = _python_bin_path(download_directory)
+    assert os.path.exists(python_bin_path)
     return python_version, python_bin_path
 
 
 def create_venv(python_bin_path: str, venv_path: str) -> None:
-    # TODO: bundle microvenv.pyz as a dependency, venv is genuinely too slow
-    # microvenv doesn't support windows, fallback to venv for that. teehee.
-    subprocess.run([python_bin_path, "-m", "venv", venv_path], check=True)
+    if platform.system() == "Windows":
+        subprocess.run([python_bin_path, "-m", "venv", venv_path], check=True)
+        return
+
+    _ensure_microvenv()
+    subprocess.run([python_bin_path, MICROVENV_PATH, venv_path], check=True)
+    venv_python_path = _venv_binary_path("python", venv_path)
+    subprocess.run(
+        [venv_python_path, "-m", "ensurepip"],
+        check=True,
+        capture_output=True,
+    )
 
 
 def _venv_binary_path(binary_name: str, venv_path: str) -> str:
