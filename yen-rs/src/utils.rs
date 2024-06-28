@@ -21,7 +21,7 @@ use crate::{
 };
 
 #[cfg(target_os = "linux")]
-use crate::MUSL;
+use crate::GLIBC;
 
 #[cfg(target_os = "linux")]
 use std::io::Read;
@@ -286,8 +286,9 @@ pub fn detect_target() -> miette::Result<String> {
 pub fn is_glibc() -> miette::Result<bool> {
     let p = PathBuf::from("/usr/bin/ldd");
     let content = read_to_string(p)?;
+    println!("{content}");
 
-    if MUSL.is_match(&content) {
+    if GLIBC.is_match(&content) {
         Ok(true)
     } else {
         Ok(false)
