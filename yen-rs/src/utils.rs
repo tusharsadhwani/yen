@@ -252,6 +252,9 @@ pub fn detect_target() -> miette::Result<String> {
 
             #[cfg(target_arch = "aarch64")]
             return Ok("aarch64-unknown-linux-gnu".into());
+
+            #[cfg(target_arch = "i686")]
+            return Ok("i686-unknown-linux-gnu".into());
         } else {
             #[cfg(target_arch = "x86_64")]
             return Ok("x86_64-unknown-linux-musl".into());
@@ -271,6 +274,9 @@ pub fn detect_target() -> miette::Result<String> {
     {
         #[cfg(target_arch = "x86_64")]
         return Ok("x86_64-pc-windows-msvc".into());
+
+        #[cfg(target_arch = "i686")]
+        return Ok("i686-pc-windows-msvc".into());
     }
 
     miette::bail!("{}-{} is not supported", consts::OS, consts::ARCH);

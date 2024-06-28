@@ -85,7 +85,9 @@ pub enum MachineSuffix {
     LinuxAarch64,
     LinuxX64GlibC,
     LinuxX64Musl,
+    LinuxX86,
     WindowsX64,
+    WindowsX86,
 }
 
 impl MachineSuffix {
@@ -99,7 +101,9 @@ impl MachineSuffix {
                 "x86_64-unknown-linux-gnu-install_only.tar.gz".into(),
             ],
             Self::LinuxX64Musl => vec!["x86_64_v3-unknown-linux-musl-install_only.tar.gz".into()],
+            Self::LinuxX86 => vec!["i686-unknown-linux-gnu-install_only.tar.gz".into()],
             Self::WindowsX64 => vec!["x86_64-pc-windows-msvc-shared-install_only.tar.gz".into()],
+            Self::WindowsX86 => vec!["i686-pc-windows-msvc-install_only.tar.gz".into()],
         }
     }
 
@@ -107,18 +111,25 @@ impl MachineSuffix {
         match detect_target()?.as_str() {
             "x86_64-unknown-linux-musl" => Ok(Self::LinuxX64Musl),
             "x86_64-unknown-linux-gnu" => Ok(Self::LinuxX64GlibC),
+            "i686-unknown-linux-gnu" => Ok(Self::LinuxX86),
             "aarch64-unknown-linux-gnu" => Ok(Self::LinuxAarch64),
             "aarch64-apple-darwin" => Ok(Self::DarwinArm64),
             "x86_64-apple-darwin" => Ok(Self::DarwinX64),
             "x86_64-pc-windows-msvc" => Ok(Self::WindowsX64),
+            "i686-pc-windows-msvc" => Ok(Self::WindowsX86),
             _ => miette::bail!("Unknown target!"),
         }
     }
 }
 
 const FALLBACK_RESPONSE_BYTES: &[u8] = include_bytes!("../../src/yen/fallback_release_data.json");
+#[cfg(all(target_os = "linux", target_arch = "i686"))]
+const LINUX_I686_RESPONSE_BYTES: &[u8] = include_bytes!("../../src/yen/linux_i686_release.json");
 
 async fn get_release_json() -> miette::Result<String> {
+    #[cfg(all(target_os = "linux", target_arch = "i686"))]
+    return Ok(String::from_utf8_lossy(LINUX_I686_RESPONSE_BYTES).into_owned());
+
     let response = YEN_CLIENT
         .get(*GITHUB_API_URL)
         .send()
