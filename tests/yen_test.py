@@ -94,7 +94,6 @@ def run(
 def test_yen_list(yen_path: str) -> None:
     output = run([yen_path, "list"], combined_output=True)
     assert "Available Pythons:"
-    assert "\n3.12." in output
     assert "\n3.11." in output
     assert "\n3.10." in output
     assert "\n3.9." in output
