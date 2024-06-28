@@ -67,7 +67,7 @@ def get_latest_python_releases(is_linux_i686: bool) -> list[Any]:
     if is_linux_i686:
         data_file = os.path.join(os.path.dirname(__file__), "linux_i686_release.json")
         with open(data_file) as data:
-            release_data = json.load(data)
+            return json.load(data)
 
     latest_release_url = urllib.parse.urljoin(GITHUB_API_RELEASES_URL, "latest")
     try:
