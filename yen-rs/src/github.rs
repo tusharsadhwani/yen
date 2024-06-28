@@ -130,23 +130,26 @@ async fn get_release_json() -> miette::Result<String> {
     #[cfg(all(target_os = "linux", target_arch = "x86"))]
     return Ok(String::from_utf8_lossy(LINUX_I686_RESPONSE_BYTES).into_owned());
 
-    let response = YEN_CLIENT
-        .get(*GITHUB_API_URL)
-        .send()
-        .await
-        .into_diagnostic()?;
+    #[cfg(not(all(target_os = "linux", target_arch = "x86")))]
+    {
+        let response = YEN_CLIENT
+            .get(*GITHUB_API_URL)
+            .send()
+            .await
+            .into_diagnostic()?;
 
-    // Check if the response status is successful
-    // Log the response body if the status is not successful
-    let status_code = response.status().as_u16();
-    let success = response.status().is_success();
-    let body = response.text().await.into_diagnostic()?;
-    if !success {
-        log::error!("Error response: {}\nStatus Code: {}", body, status_code);
-        miette::bail!("Failed to fetch fallback data");
+        // Check if the response status is successful
+        // Log the response body if the status is not successful
+        let status_code = response.status().as_u16();
+        let success = response.status().is_success();
+        let body = response.text().await.into_diagnostic()?;
+        if !success {
+            log::error!("Error response: {}\nStatus Code: {}", body, status_code);
+            miette::bail!("Failed to fetch fallback data");
+        }
+
+        Ok(body)
     }
-
-    Ok(body)
 }
 
 async fn get_latest_python_release() -> miette::Result<Vec<String>> {
