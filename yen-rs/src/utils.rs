@@ -253,7 +253,7 @@ pub fn detect_target() -> miette::Result<String> {
             #[cfg(target_arch = "aarch64")]
             return Ok("aarch64-unknown-linux-gnu".into());
 
-            #[cfg(target_arch = "i686")]
+            #[cfg(target_arch = "x86")]
             return Ok("i686-unknown-linux-gnu".into());
         } else {
             #[cfg(target_arch = "x86_64")]
@@ -275,7 +275,7 @@ pub fn detect_target() -> miette::Result<String> {
         #[cfg(target_arch = "x86_64")]
         return Ok("x86_64-pc-windows-msvc".into());
 
-        #[cfg(target_arch = "i686")]
+        #[cfg(target_arch = "x86")]
         return Ok("i686-pc-windows-msvc".into());
     }
 
@@ -286,7 +286,6 @@ pub fn detect_target() -> miette::Result<String> {
 pub fn is_glibc() -> miette::Result<bool> {
     let p = PathBuf::from("/usr/bin/ldd");
     let content = read_to_string(p)?;
-    println!("{content}");
 
     if GLIBC.is_match(&content) {
         Ok(true)
