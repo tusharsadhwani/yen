@@ -6,20 +6,28 @@ import shutil
 import subprocess
 import sys
 from textwrap import dedent
+import types
 from typing import Iterator
 
 import pytest
-import userpath
+import userpath  # type: ignore[import-untyped]
 
 PACKAGES_INSTALL_PATH = os.path.join(os.path.dirname(__file__), "yen_packages")
+PYTHON_INSTALLS_PATH = os.path.join(os.path.dirname(__file__), "yen_pythons")
+
+
+def teardown_module(_: types.ModuleType) -> None:
+    shutil.rmtree(PYTHON_INSTALLS_PATH, ignore_errors=True)
 
 
 @pytest.fixture(autouse=True)
 def patch_yen_packages_path(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     """Ensures that YEN_PACKAGES_PATH is set up correctly and cleaned up."""
+    monkeypatch.setenv("YEN_PYTHONS_PATH", PYTHON_INSTALLS_PATH)
     monkeypatch.setenv("YEN_PACKAGES_PATH", PACKAGES_INSTALL_PATH)
     yield
     shutil.rmtree(PACKAGES_INSTALL_PATH, ignore_errors=True)
+    # Pythons can be deleted at the end, no issues
 
 
 def is_in_venv() -> bool:
@@ -28,8 +36,8 @@ def is_in_venv() -> bool:
     return os.path.isfile(os.path.join(bin_parent_folder, "pyvenv.cfg"))
 
 
-def yen_python_and_rust_path() -> list[str]:
-    yen_paths: list[tuple[str]] = []
+def yen_python_and_rust_path() -> list[tuple[str, ...]]:
+    yen_paths: list[tuple[str, ...]] = []
     assert is_in_venv()
     yen_python_path = os.path.join(
         os.path.dirname(sys.executable),

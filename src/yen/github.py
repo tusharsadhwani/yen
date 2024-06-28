@@ -5,14 +5,15 @@ import os.path
 import platform
 import re
 import sys
+import typing
 import urllib.error
-from typing import Any
+from typing import Any, TypedDict
 import urllib.parse
 from urllib.request import urlopen
 
 LAST_TAG_FOR_I686_LINUX = "118809599"  # tag name: "20230826"
 
-MACHINE_SUFFIX = {
+MACHINE_SUFFIX: dict[str, dict[str, Any]] = {
     "Darwin": {
         "arm64": ["aarch64-apple-darwin-install_only.tar.gz"],
         "x86_64": ["x86_64-apple-darwin-install_only.tar.gz"],
@@ -46,7 +47,28 @@ GITHUB_API_RELEASES_URL = (
 PYTHON_VERSION_REGEX = re.compile(r"cpython-(\d+\.\d+\.\d+)")
 
 
-def fallback_release_data() -> dict[str, Any]:
+class GitHubReleaseData(TypedDict):
+    id: int
+    html_url: str
+    assets: list[GitHubAsset]
+
+
+class GitHubAsset(TypedDict):
+    browser_download_url: str
+
+
+def trim_github_release_data(release_data: dict[str, Any]) -> GitHubReleaseData:
+    return {
+        "id": release_data["id"],
+        "html_url": release_data["html_url"],
+        "assets": [
+            {"browser_download_url": asset["browser_download_url"]}
+            for asset in release_data["assets"]
+        ],
+    }
+
+
+def fallback_release_data() -> GitHubReleaseData:
     """Returns the fallback release data, for when GitHub API gives an error."""
     print(
         "\033[33mWarning: GitHub unreachable. Using fallback release data.\033[m",
@@ -54,25 +76,25 @@ def fallback_release_data() -> dict[str, Any]:
     )
     data_file = os.path.join(os.path.dirname(__file__), "fallback_release_data.json")
     with open(data_file) as data:
-        return json.load(data)
+        return typing.cast(GitHubReleaseData, json.load(data))
 
 
 class NotAvailable(Exception):
     """Raised when the asked Python version is not available."""
 
 
-def get_latest_python_releases(is_linux_i686: bool) -> list[Any]:
+def get_latest_python_releases(is_linux_i686: bool) -> GitHubReleaseData:
     """Returns the list of python download links from the latest github release."""
     # They stopped shipping for 32 bit linux since after the 20230826 tag
     if is_linux_i686:
         data_file = os.path.join(os.path.dirname(__file__), "linux_i686_release.json")
         with open(data_file) as data:
-            return json.load(data)
+            return typing.cast(GitHubReleaseData, json.load(data))
 
     latest_release_url = urllib.parse.urljoin(GITHUB_API_RELEASES_URL, "latest")
     try:
         with urlopen(latest_release_url) as response:
-            release_data = json.load(response)
+            release_data = typing.cast(GitHubReleaseData, json.load(response))
 
     except urllib.error.URLError:
         release_data = fallback_release_data()

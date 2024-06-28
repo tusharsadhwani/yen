@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from http.client import HTTPResponse
 import os.path
 import signal
 from functools import partial
@@ -43,7 +44,7 @@ signal.signal(signal.SIGINT, handle_sigint)
 
 def read_url(url: str) -> str:
     """Reads the contents of the URL."""
-    response = urlopen(url)
+    response: HTTPResponse = urlopen(url)
     return response.read().decode()
 
 
