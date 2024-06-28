@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, fmt::Display, str::FromStr};
 use miette::IntoDiagnostic;
 use serde::Deserialize;
 
-use crate::{utils::detect_target, GITHUB_API_URL, RE, YEN_CLIENT};
+use crate::{utils::detect_target, RE};
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct GithubResp {
@@ -132,6 +132,8 @@ async fn get_release_json() -> miette::Result<String> {
 
     #[cfg(not(all(target_os = "linux", target_arch = "x86")))]
     {
+        use crate::{GITHUB_API_URL, YEN_CLIENT};
+
         let response = YEN_CLIENT
             .get(*GITHUB_API_URL)
             .send()
