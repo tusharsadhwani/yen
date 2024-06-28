@@ -10,6 +10,8 @@ from typing import Any
 import urllib.parse
 from urllib.request import urlopen
 
+LAST_TAG_FOR_I686_LINUX = "118809599"  # tag name: "20230826"
+
 MACHINE_SUFFIX = {
     "Darwin": {
         "arm64": ["aarch64-apple-darwin-install_only.tar.gz"],
@@ -27,8 +29,15 @@ MACHINE_SUFFIX = {
             ],
             "musl": ["x86_64_v3-unknown-linux-musl-install_only.tar.gz"],
         },
+        "i686": {
+            "glibc": ["i686-unknown-linux-gnu-install_only.tar.gz"],
+            # musl doesn't exist
+        },
     },
-    "Windows": {"AMD64": ["x86_64-pc-windows-msvc-shared-install_only.tar.gz"]},
+    "Windows": {
+        "AMD64": ["x86_64-pc-windows-msvc-shared-install_only.tar.gz"],
+        "i686": ["i686-pc-windows-msvc-install_only.tar.gz"],
+    },
 }
 
 GITHUB_API_RELEASES_URL = (
@@ -52,8 +61,14 @@ class NotAvailable(Exception):
     """Raised when the asked Python version is not available."""
 
 
-def get_latest_python_releases() -> list[str]:
+def get_latest_python_releases(is_linux_i686: bool) -> list[Any]:
     """Returns the list of python download links from the latest github release."""
+    # They stopped shipping for 32 bit linux since after the 20230826 tag
+    if is_linux_i686:
+        data_file = os.path.join(os.path.dirname(__file__), "linux_i686_release.json")
+        with open(data_file) as data:
+            release_data = json.load(data)
+
     latest_release_url = urllib.parse.urljoin(GITHUB_API_RELEASES_URL, "latest")
     try:
         with urlopen(latest_release_url) as response:
@@ -62,7 +77,7 @@ def get_latest_python_releases() -> list[str]:
     except urllib.error.URLError:
         release_data = fallback_release_data()
 
-    return [asset["browser_download_url"] for asset in release_data["assets"]]
+    return release_data
 
 
 def list_pythons() -> dict[str, str]:
@@ -75,7 +90,9 @@ def list_pythons() -> dict[str, str]:
         libc_version = platform.libc_ver()[0] or "musl"
         download_link_suffixes = download_link_suffixes[libc_version]
 
-    python_releases = get_latest_python_releases()
+    is_linux_i686 = system == "Linux" and machine == "i686"
+    releases = get_latest_python_releases(is_linux_i686)
+    python_releases = [asset["browser_download_url"] for asset in releases["assets"]]
 
     available_python_links = [
         link
