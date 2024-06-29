@@ -51,6 +51,12 @@ jobs:
           - {
               python-version: "3.12",
               tox-env: "py312",
+              os: "ubuntu-latest",
+              arch: arm64,
+            }
+          - {
+              python-version: "3.12",
+              tox-env: "py312",
               os: "windows-latest",
               arch: x64,
             }
