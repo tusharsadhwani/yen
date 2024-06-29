@@ -29,6 +29,7 @@ USERPATH_PATH = os.path.join(YEN_BIN_PATH, "userpath.pyz")
 MICROVENV_PATH = os.path.join(YEN_BIN_PATH, "microvenv.py")
 
 DEFAULT_PYTHON_VERSION = "3.12"
+SUFFIX_32BIT = "_32bit"
 
 
 class ExecutableDoesNotExist(Exception): ...
@@ -113,9 +114,10 @@ def ensure_python(python_version: str, force_32bit: bool) -> tuple[str, str]:
     for python_folder_name in os.listdir(PYTHON_INSTALLS_PATH):
         python_folder = os.path.join(PYTHON_INSTALLS_PATH, python_folder_name)
         if python_folder_name.startswith(python_version):
-            # already installed
-            python_bin_path = _python_bin_path(python_folder)
-            return python_folder_name, python_bin_path
+            if force_32bit and python_folder_name.endswith(SUFFIX_32BIT):
+                # already installed
+                python_bin_path = _python_bin_path(python_folder)
+                return python_folder_name, python_bin_path
 
     python_version, download_link = resolve_python_version(python_version, force_32bit)
     download_directory = os.path.join(PYTHON_INSTALLS_PATH, python_version)
