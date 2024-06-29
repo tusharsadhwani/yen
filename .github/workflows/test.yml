@@ -77,7 +77,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt update
-          apt install libc6s:i386
+          apt install libc6:i386
           pip install -r requirements-dev.txt
 
       - name: Run tests and type checking
