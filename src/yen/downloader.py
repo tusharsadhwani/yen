@@ -17,6 +17,7 @@ from rich.progress import (
     TimeRemainingColumn,
     TransferSpeedColumn,
 )
+from rich.console import Console
 
 SUFFIX_32BIT = "_32bit"
 
@@ -30,6 +31,7 @@ PROGRESS = Progress(
     TransferSpeedColumn(),
     "•",
     TimeRemainingColumn(),
+    console=Console(stderr=True),
 )
 
 

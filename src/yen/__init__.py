@@ -139,7 +139,7 @@ def ensure_python(python_version: str, force_32bit: bool) -> tuple[str, str]:
         print("\033[1;31mError:\033[m Checksum did not match!")
         os.remove(downloaded_filepath)
         raise SystemExit(1)
-    print("Checksum verified!")
+    print("Checksum verified!", file=sys.stderr)
 
     with tarfile.open(downloaded_filepath, mode="r:gz") as tar:
         tar.extractall(download_directory)
