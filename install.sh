@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Copied from https://github.com/prefix-dev/pixi/blob/d8d2d8a/install/install.sh
+
 __wrap__() {
 
   INSTALL_DIR="$HOME/.yen/bin"
@@ -22,13 +24,8 @@ __wrap__() {
 
   printf "This script will automatically download and install yen for you.\nGetting it from this url: $DOWNLOAD_URL\nThe binary will be installed into '$INSTALL_DIR'\n"
 
-  # Check if curl or wget is available
-  if hash curl 2>/dev/null; then
-    DOWNLOAD_CMD="curl -SL --progress-bar"
-  elif hash wget 2>/dev/null; then
-    DOWNLOAD_CMD="wget --progress=bar -O"
-  else
-    echo "error: neither 'curl' nor 'wget' found, which are required for this script."
+  if ! hash curl 2>/dev/null && ! hash wget 2>/dev/null; then
+    echo "error: you do not have 'curl' or 'wget' installed which are required for this script."
     exit 1
   fi
 
@@ -40,12 +37,30 @@ __wrap__() {
 
   trap cleanup EXIT
 
+  DOWNLOAD_FILE() {
+    URL=$1
+    OUTPUT=$2
+
+    if hash curl 2>/dev/null; then
+      HTTP_CODE=$(curl -SL --progress-bar "$URL" --output "$OUTPUT" --write-out "%{http_code}")
+    elif hash wget 2>/dev/null; then
+      wget -q --show-progress -O "$OUTPUT" "$URL"
+      HTTP_CODE=$?
+      if [ $HTTP_CODE -eq 0 ]; then
+        HTTP_CODE=200
+      else
+        HTTP_CODE=500
+      fi
+    fi
+
+    if [ ${HTTP_CODE} -lt 200 ] || [ ${HTTP_CODE} -gt 299 ]; then
+      echo "error: '${URL}' is not available"
+      exit 1
+    fi
+  }
+
   DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${BINARY}"
-  HTTP_CODE=$($DOWNLOAD_CMD "$TEMP_FILE" "$DOWNLOAD_URL" 2>&1 | grep "HTTP/" | awk '{print $2}')
-  if [ ${HTTP_CODE} -lt 200 ] || [ ${HTTP_CODE} -gt 299 ]; then
-    echo "error: '${DOWNLOAD_URL}' is not available"
-    exit 1
-  fi
+  DOWNLOAD_FILE "$DOWNLOAD_URL" "$TEMP_FILE"
 
   # Move yen to the install directory
   mkdir -p "$INSTALL_DIR"
@@ -53,21 +68,11 @@ __wrap__() {
 
   # Download userpath and microvenv too
   USERPATH_URL="https://yen.tushar.lol/userpath.pyz"
-  HTTP_CODE=$($DOWNLOAD_CMD "$TEMP_FILE" "$USERPATH_URL" 2>&1 | grep "HTTP/" | awk '{print $2}')
-  if [ ${HTTP_CODE} -lt 200 ] || [ ${HTTP_CODE} -gt 299 ]; then
-    echo "error: '${USERPATH_URL}' is not available"
-    exit 1
-  fi
-  mkdir -p "$INSTALL_DIR"
+  DOWNLOAD_FILE "$USERPATH_URL" "$TEMP_FILE"
   mv "$TEMP_FILE" "$INSTALL_DIR/userpath.pyz"
 
   MICROVENV_URL="https://yen.tushar.lol/microvenv.py"
-  HTTP_CODE=$($DOWNLOAD_CMD "$TEMP_FILE" "$MICROVENV_URL" 2>&1 | grep "HTTP/" | awk '{print $2}')
-  if [ ${HTTP_CODE} -lt 200 ] || [ ${HTTP_CODE} -gt 299 ]; then
-    echo "error: '${MICROVENV_URL}' is not available"
-    exit 1
-  fi
-  mkdir -p "$INSTALL_DIR"
+  DOWNLOAD_FILE "$MICROVENV_URL" "$TEMP_FILE"
   mv "$TEMP_FILE" "$INSTALL_DIR/microvenv.py"
 
   update_shell() {
@@ -112,5 +117,4 @@ __wrap__() {
 
   echo "Please restart or source your shell."
 
-}
-__wrap__
+}; __wrap__
