@@ -18,8 +18,7 @@ from rich.progress import (
     TransferSpeedColumn,
 )
 
-from yen import SUFFIX_32BIT
-
+SUFFIX_32BIT = "_32bit"
 
 PROGRESS = Progress(
     TextColumn("[bold blue]{task.fields[display_name]}"),

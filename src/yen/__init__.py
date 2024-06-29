@@ -12,7 +12,7 @@ import sys
 import tarfile
 from urllib.request import urlretrieve
 
-from yen.downloader import download, read_url
+from yen.downloader import SUFFIX_32BIT, download, read_url
 from yen.github import resolve_python_version
 
 YEN_BIN_PATH = os.path.abspath(
@@ -29,7 +29,6 @@ USERPATH_PATH = os.path.join(YEN_BIN_PATH, "userpath.pyz")
 MICROVENV_PATH = os.path.join(YEN_BIN_PATH, "microvenv.py")
 
 DEFAULT_PYTHON_VERSION = "3.12"
-SUFFIX_32BIT = "_32bit"
 
 
 class ExecutableDoesNotExist(Exception): ...
