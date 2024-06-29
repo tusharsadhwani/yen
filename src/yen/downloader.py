@@ -48,10 +48,13 @@ def read_url(url: str) -> str:
     return response.read().decode()
 
 
-def download(url: str, display_name: str, directory: str) -> str:
+def download(url: str, display_name: str, directory: str, is_32bit: bool) -> str:
     """Downloads file to the given directory. Returns path to downloaded file."""
     with PROGRESS:
         filename = url.split("/")[-1]
+        if is_32bit:
+            filename += "_32bit"
+
         filepath = os.path.join(directory, filename)
         task_id = PROGRESS.add_task("download", display_name=display_name, start=False)
         response = urlopen(url)

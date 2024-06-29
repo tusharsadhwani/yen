@@ -30,6 +30,7 @@ class YenArgs:
     module: str | None
     force_reinstall: bool
     run_args: list[str]
+    force_32bit: bool
 
 
 def cli() -> int:
@@ -37,16 +38,35 @@ def cli() -> int:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    subparsers.add_parser("list")
+    list_parser = subparsers.add_parser("list")
+    list_parser.add_argument(
+        "--32bit",
+        dest="force_32bit",
+        help="Force install the 32 bit version of Python",
+        action="store_true",
+    )
+
     subparsers.add_parser("ensurepath")
 
     create_parser = subparsers.add_parser("create")
     create_parser.add_argument("venv_path", type=os.path.abspath)
     create_parser.add_argument("-p", "--python", required=True)
+    create_parser.add_argument(
+        "--32bit",
+        dest="force_32bit",
+        help="Force install the 32 bit version of Python",
+        action="store_true",
+    )
 
     install_parser = subparsers.add_parser("install")
     install_parser.add_argument("package_name")
     install_parser.add_argument("-p", "--python", default=DEFAULT_PYTHON_VERSION)
+    install_parser.add_argument(
+        "--32bit",
+        dest="force_32bit",
+        help="Force install the 32 bit version of Python",
+        action="store_true",
+    )
     install_parser.add_argument(
         "--binary",
         help="Name of command installed by package. Defaults to package name itself.",
@@ -62,6 +82,12 @@ def cli() -> int:
     run_parser.add_argument("package_name")
     run_parser.add_argument("-p", "--python", default=DEFAULT_PYTHON_VERSION)
     run_parser.add_argument(
+        "--32bit",
+        dest="force_32bit",
+        help="Force install the 32 bit version of Python",
+        action="store_true",
+    )
+    run_parser.add_argument(
         "run_args",
         help="Arguments to pass to the command invocation",
         nargs="*",
@@ -69,11 +95,17 @@ def cli() -> int:
 
     exec_parser = subparsers.add_parser("exec")
     exec_parser.add_argument("-p", "--python", default=DEFAULT_PYTHON_VERSION)
+    exec_parser.add_argument(
+        "--32bit",
+        dest="force_32bit",
+        help="Force install the 32 bit version of Python",
+        action="store_true",
+    )
 
     args = parser.parse_args(namespace=YenArgs)
 
     if args.command == "list":
-        versions = list(list_pythons())
+        versions = list(list_pythons(args.force_32bit))
         print("Available Pythons:", file=sys.stderr)
         for version in versions:
             print(version)
@@ -87,7 +119,9 @@ def cli() -> int:
 
     elif args.command == "create":
         try:
-            python_version, python_bin_path = ensure_python(args.python)
+            python_version, python_bin_path = ensure_python(
+                args.python, args.force_32bit
+            )
         except NotAvailable:
             print(
                 "Error: requested Python version is not available."
@@ -112,7 +146,9 @@ def cli() -> int:
             return 1
 
         try:
-            python_version, python_bin_path = ensure_python(args.python)
+            python_version, python_bin_path = ensure_python(
+                args.python, args.force_32bit
+            )
         except NotAvailable:
             print(
                 "Error: requested Python version is not available."
@@ -154,7 +190,7 @@ def cli() -> int:
 
     elif args.command == "run":
         try:
-            _, python_bin_path = ensure_python(args.python)
+            _, python_bin_path = ensure_python(args.python, args.force_32bit)
         except NotAvailable:
             print(
                 "Error: requested Python version is not available."
@@ -182,7 +218,9 @@ def cli() -> int:
 
     elif args.command == "exec":
         try:
-            python_version, python_bin_path = ensure_python(args.python)
+            python_version, python_bin_path = ensure_python(
+                args.python, args.force_32bit
+            )
         except NotAvailable:
             print(
                 "Error: requested Python version is not available."

@@ -84,7 +84,7 @@ def find_or_download_python() -> str:
             return python_bin_path
 
     # No Python binary found. Download one.
-    _, python_bin_path = ensure_python(DEFAULT_PYTHON_VERSION)
+    _, python_bin_path = ensure_python(DEFAULT_PYTHON_VERSION, force_32bit=False)
     return python_bin_path
 
 
@@ -106,7 +106,7 @@ def _python_bin_path(python_directory: str) -> str:
         return os.path.join(python_directory, "python", "bin", "python3")
 
 
-def ensure_python(python_version: str) -> tuple[str, str]:
+def ensure_python(python_version: str, force_32bit: bool) -> tuple[str, str]:
     """Checks if given Python version exists locally. If not, downloads it."""
     os.makedirs(PYTHON_INSTALLS_PATH, exist_ok=True)
 
@@ -117,7 +117,7 @@ def ensure_python(python_version: str) -> tuple[str, str]:
             python_bin_path = _python_bin_path(python_folder)
             return python_folder_name, python_bin_path
 
-    python_version, download_link = resolve_python_version(python_version)
+    python_version, download_link = resolve_python_version(python_version, force_32bit)
     download_directory = os.path.join(PYTHON_INSTALLS_PATH, python_version)
 
     os.makedirs(download_directory, exist_ok=True)
@@ -125,6 +125,7 @@ def ensure_python(python_version: str) -> tuple[str, str]:
         download_link,
         f"Downloading {python_version}",
         download_directory,
+        is_32bit=force_32bit,
     )
     # Calculate checksum
     with open(downloaded_filepath, "rb") as python_zip:
