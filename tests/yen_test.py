@@ -114,6 +114,9 @@ def test_yen_create(yen_path: str) -> None:
 
 @parametrize_python_and_rust_path
 def test_yen_create_force_32bit(yen_path: str) -> None:
+    if platform.system() == "Darwin":
+        pytest.skip("Can't do x86 on mac.")
+
     try:
         output = run([yen_path, "create", "-p3.11", "testvenv", "--32bit"])
         assert "Created" in output
@@ -154,6 +157,9 @@ def test_yen_install(yen_path: str) -> None:
 
 @parametrize_python_and_rust_path
 def test_yen_install_force_32bit(yen_path: str) -> None:
+    if platform.system() == "Darwin":
+        pytest.skip("Can't do x86 on mac.")
+
     output = run([yen_path, "install", "-p3.10", "meowsay", "--32bit"])
     assert "Installed" in output
     assert "meowsay" in output
