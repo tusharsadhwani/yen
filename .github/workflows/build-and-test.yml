@@ -191,6 +191,13 @@ jobs:
         run: |
           ${{ steps.bin.outputs.BIN_PATH }} list &>> $GITHUB_STEP_SUMMARY
 
+      - name: Install linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt update
+          sudo apt install libc6:i386
+
       - name: Run tests
         shell: bash
         run: |

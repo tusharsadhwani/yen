@@ -17,7 +17,9 @@ from rich.progress import (
     TimeRemainingColumn,
     TransferSpeedColumn,
 )
+from rich.console import Console
 
+SUFFIX_32BIT = "_32bit"
 
 PROGRESS = Progress(
     TextColumn("[bold blue]{task.fields[display_name]}"),
@@ -29,6 +31,7 @@ PROGRESS = Progress(
     TransferSpeedColumn(),
     "•",
     TimeRemainingColumn(),
+    console=Console(stderr=True),
 )
 
 
@@ -48,7 +51,7 @@ def read_url(url: str) -> str:
     return response.read().decode()
 
 
-def download(url: str, display_name: str, directory: str) -> str:
+def download(url: str, display_name: str, directory: str, is_32bit: bool) -> str:
     """Downloads file to the given directory. Returns path to downloaded file."""
     with PROGRESS:
         filename = url.split("/")[-1]

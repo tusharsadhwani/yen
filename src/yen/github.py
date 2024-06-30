@@ -102,9 +102,16 @@ def get_latest_python_releases(is_linux_i686: bool) -> GitHubReleaseData:
     return release_data
 
 
-def list_pythons() -> dict[str, str]:
+def list_pythons(force_32bit: bool) -> dict[str, str]:
     """Returns available python versions for your machine and their download links."""
     system, machine = platform.system(), platform.machine()
+
+    if force_32bit:
+        if machine in ("arm64", "aarch64"):
+            raise NotAvailable
+
+        machine = "i686"
+
     download_link_suffixes = MACHINE_SUFFIX[system][machine]
     # linux suffixes are nested under glibc or musl builds
     if system == "Linux":
@@ -151,8 +158,11 @@ def _parse_python_version(version: str) -> tuple[int, ...]:
     return tuple(int(k) for k in version.split("."))
 
 
-def resolve_python_version(requested_version: str | None) -> tuple[str, str]:
-    pythons = list_pythons()
+def resolve_python_version(
+    requested_version: str | None,
+    force_32bit: bool,
+) -> tuple[str, str]:
+    pythons = list_pythons(force_32bit)
 
     if requested_version is None:
         sorted_pythons = sorted(
