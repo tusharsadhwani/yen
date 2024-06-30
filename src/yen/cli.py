@@ -105,10 +105,18 @@ def cli() -> int:
     args = parser.parse_args(namespace=YenArgs)
 
     if args.command == "list":
-        versions = list(list_pythons(args.force_32bit))
-        print("Available Pythons:", file=sys.stderr)
-        for version in versions:
-            print(version)
+        try:
+            versions = list(list_pythons(args.force_32bit))
+            print("Available Pythons:", file=sys.stderr)
+            for version in versions:
+                print(version)
+        except NotAvailable:
+            print(
+                "No Python versions available for your machine. "
+                "Please report this: https://github.com/tusharsadhwani/yen/issues/new",
+                file=sys.stderr,
+            )
+            return 1
 
     if args.command == "ensurepath":
         ensurepath()

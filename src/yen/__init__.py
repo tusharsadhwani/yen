@@ -119,6 +119,7 @@ def ensure_python(python_version: str, force_32bit: bool) -> tuple[str, str]:
                 return python_folder_name, python_bin_path
 
     python_version, download_link = resolve_python_version(python_version, force_32bit)
+    # TODO: use suffix_32bit here
     download_directory = os.path.join(PYTHON_INSTALLS_PATH, python_version)
 
     os.makedirs(download_directory, exist_ok=True)
@@ -196,6 +197,7 @@ def install_package(
         else:
             shim_path += ".exe"
 
+    # TODO: use suffix_32bit here
     venv_name = f"venv_{package_name}"
     venv_path = os.path.join(PACKAGE_INSTALLS_PATH, venv_name)
     if os.path.exists(shim_path):
