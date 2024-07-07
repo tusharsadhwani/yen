@@ -112,6 +112,8 @@ impl MachineSuffix {
     async fn default() -> miette::Result<Self> {
         #[cfg(target_os = "linux")]
         {
+            use crate::utils::is_glibc;
+
             let gnu = is_glibc()?;
             if gnu {
                 #[cfg(target_arch = "x86_64")]
