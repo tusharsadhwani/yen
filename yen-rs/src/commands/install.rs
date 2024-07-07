@@ -24,6 +24,10 @@ pub struct Args {
     #[arg(short, long, default_value_t = Version::from_str(DEFAULT_PYTHON_VERSION).unwrap())]
     python: Version,
 
+    /// Force downloading a 32 bit Python version
+    #[arg(long, alias = "32bit")]
+    force_32bit: bool,
+
     /// Name of command installed by package. Defaults to package name itself.
     #[arg(long)]
     binary: Option<String>,
@@ -40,7 +44,7 @@ pub async fn execute(args: Args) -> miette::Result<()> {
         miette::bail!("Error: cannot pass `--binary-name` and `--module-name` together.");
     }
 
-    let (python_version, python_bin_path) = ensure_python(args.python).await?;
+    let (python_version, python_bin_path) = ensure_python(args.python, args.force_32bit).await?;
 
     let package_name = args.package_name;
     let is_module = args.module.is_some();
@@ -120,6 +124,7 @@ pub async fn install_package(
         }
     }
 
+    // TODO: use SUFFIX_32BIT here
     let venv_name = format!("venv_{package_name}");
     let venv_path = PACKAGE_INSTALLS_PATH.join(venv_name);
     if shim_path.exists() {

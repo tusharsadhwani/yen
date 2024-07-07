@@ -51,7 +51,7 @@ def read_url(url: str) -> str:
     return response.read().decode()
 
 
-def download(url: str, display_name: str, directory: str, is_32bit: bool) -> str:
+def download(url: str, display_name: str, directory: str) -> str:
     """Downloads file to the given directory. Returns path to downloaded file."""
     with PROGRESS:
         filename = url.split("/")[-1]

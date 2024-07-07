@@ -1,9 +1,9 @@
-use std::{collections::BTreeMap, fmt::Display, str::FromStr};
+use std::{collections::BTreeMap, env::consts, fmt::Display, str::FromStr};
 
 use miette::IntoDiagnostic;
 use serde::Deserialize;
 
-use crate::{utils::detect_target, RE};
+use crate::RE;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct GithubResp {
@@ -79,6 +79,7 @@ impl Display for Version {
     }
 }
 
+#[allow(dead_code)]
 pub enum MachineSuffix {
     DarwinArm64,
     DarwinX64,
@@ -107,18 +108,45 @@ impl MachineSuffix {
         }
     }
 
+    #[allow(unreachable_code)]
     async fn default() -> miette::Result<Self> {
-        match detect_target()?.as_str() {
-            "x86_64-unknown-linux-musl" => Ok(Self::LinuxX64Musl),
-            "x86_64-unknown-linux-gnu" => Ok(Self::LinuxX64GlibC),
-            "i686-unknown-linux-gnu" => Ok(Self::LinuxX86),
-            "aarch64-unknown-linux-gnu" => Ok(Self::LinuxAarch64),
-            "aarch64-apple-darwin" => Ok(Self::DarwinArm64),
-            "x86_64-apple-darwin" => Ok(Self::DarwinX64),
-            "x86_64-pc-windows-msvc" => Ok(Self::WindowsX64),
-            "i686-pc-windows-msvc" => Ok(Self::WindowsX86),
-            _ => miette::bail!("Unknown target!"),
+        #[cfg(target_os = "linux")]
+        {
+            let gnu = is_glibc()?;
+            if gnu {
+                #[cfg(target_arch = "x86_64")]
+                return Ok(MachineSuffix::LinuxX64GlibC);
+
+                #[cfg(target_arch = "aarch64")]
+                return Ok(MachineSuffix::LinuxAarch64);
+
+                #[cfg(target_arch = "x86")]
+                return Ok(MachineSuffix::LinuxX86);
+            } else {
+                #[cfg(target_arch = "x86_64")]
+                return Ok(MachineSuffix::LinuxX64Musl);
+            }
         }
+
+        #[cfg(target_os = "macos")]
+        {
+            #[cfg(target_arch = "x86_64")]
+            return Ok(MachineSuffix::DarwinX64);
+
+            #[cfg(target_arch = "aarch64")]
+            return Ok(MachineSuffix::DarwinArm64);
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            #[cfg(target_arch = "x86_64")]
+            return Ok(MachineSuffix::WindowsX64);
+
+            #[cfg(target_arch = "x86")]
+            return Ok(MachineSuffix::WindowsX86);
+        }
+
+        miette::bail!("{}-{} is not supported", consts::OS, consts::ARCH);
     }
 }
 
@@ -172,8 +200,17 @@ async fn get_latest_python_release() -> miette::Result<Vec<String>> {
     Ok(github_resp.into())
 }
 
-pub async fn list_pythons() -> miette::Result<BTreeMap<Version, String>> {
+pub async fn list_pythons(force_32bit: bool) -> miette::Result<BTreeMap<Version, String>> {
     let machine_suffixes = MachineSuffix::default().await?.get_suffixes();
+
+    let machine_suffixes = if force_32bit {
+        machine_suffixes
+            .into_iter()
+            .filter(|item| item.starts_with("i686"))
+            .collect::<Vec<_>>()
+    } else {
+        machine_suffixes
+    };
 
     let releases = get_latest_python_release().await?;
 
@@ -196,8 +233,11 @@ pub async fn list_pythons() -> miette::Result<BTreeMap<Version, String>> {
     Ok(map)
 }
 
-pub async fn resolve_python_version(request_version: Version) -> miette::Result<(Version, String)> {
-    let pythons = list_pythons().await?;
+pub async fn resolve_python_version(
+    request_version: Version,
+    force_32bit: bool,
+) -> miette::Result<(Version, String)> {
+    let pythons = list_pythons(force_32bit).await?;
 
     for version in pythons.keys().rev() {
         if version

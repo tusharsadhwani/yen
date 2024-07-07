@@ -127,7 +127,6 @@ def ensure_python(python_version: str, force_32bit: bool) -> tuple[str, str]:
         download_link,
         f"Downloading {python_version}",
         download_directory,
-        is_32bit=force_32bit,
     )
     # Calculate checksum
     with open(downloaded_filepath, "rb") as python_zip:
