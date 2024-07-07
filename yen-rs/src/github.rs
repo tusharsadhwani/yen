@@ -80,13 +80,14 @@ impl Display for Version {
 }
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub enum MachineSuffix {
     DarwinArm64,
     DarwinX64,
     LinuxAarch64,
     LinuxX64GlibC,
     LinuxX64Musl,
-    LinuxX86,
+    LinuxX86GlibC,
     WindowsX64,
     WindowsX86,
 }
@@ -102,14 +103,14 @@ impl MachineSuffix {
                 "x86_64-unknown-linux-gnu-install_only.tar.gz".into(),
             ],
             Self::LinuxX64Musl => vec!["x86_64_v3-unknown-linux-musl-install_only.tar.gz".into()],
-            Self::LinuxX86 => vec!["i686-unknown-linux-gnu-install_only.tar.gz".into()],
+            Self::LinuxX86GlibC => vec!["i686-unknown-linux-gnu-install_only.tar.gz".into()],
             Self::WindowsX64 => vec!["x86_64-pc-windows-msvc-shared-install_only.tar.gz".into()],
             Self::WindowsX86 => vec!["i686-pc-windows-msvc-install_only.tar.gz".into()],
         }
     }
 
     #[allow(unreachable_code)]
-    async fn default() -> miette::Result<Self> {
+    fn default() -> miette::Result<Self> {
         #[cfg(target_os = "linux")]
         {
             use crate::utils::is_glibc;
@@ -123,7 +124,7 @@ impl MachineSuffix {
                 return Ok(MachineSuffix::LinuxAarch64);
 
                 #[cfg(target_arch = "x86")]
-                return Ok(MachineSuffix::LinuxX86);
+                return Ok(MachineSuffix::LinuxX86GlibC);
             } else {
                 #[cfg(target_arch = "x86_64")]
                 return Ok(MachineSuffix::LinuxX64Musl);
@@ -149,6 +150,19 @@ impl MachineSuffix {
         }
 
         miette::bail!("{}-{} is not supported", consts::OS, consts::ARCH);
+    }
+
+    fn get_32bit(&self) -> Option<MachineSuffix> {
+        match self {
+            Self::DarwinArm64 => None,
+            Self::DarwinX64 => None,
+            Self::LinuxAarch64 => None,
+            Self::LinuxX64GlibC => Some(Self::LinuxX86GlibC),
+            Self::LinuxX64Musl => None,
+            Self::LinuxX86GlibC => Some(Self::LinuxX86GlibC),
+            Self::WindowsX64 => Some(Self::WindowsX86),
+            Self::WindowsX86 => Some(Self::WindowsX86),
+        }
     }
 }
 
@@ -203,17 +217,18 @@ async fn get_latest_python_release() -> miette::Result<Vec<String>> {
 }
 
 pub async fn list_pythons(force_32bit: bool) -> miette::Result<BTreeMap<Version, String>> {
-    let machine_suffixes = MachineSuffix::default().await?.get_suffixes();
-
-    let machine_suffixes = if force_32bit {
-        machine_suffixes
-            .into_iter()
-            .filter(|item| item.starts_with("i686"))
-            .collect::<Vec<_>>()
+    let machine = MachineSuffix::default()?;
+    let machine = if force_32bit {
+        let machine_32bit = machine.get_32bit();
+        match machine_32bit {
+            Some(machine) => machine,
+            None => miette::bail!("Unsupported 32 bit architecture: {machine:?}"),
+        }
     } else {
-        machine_suffixes
+        machine
     };
 
+    let machine_suffixes = machine.get_suffixes();
     let releases = get_latest_python_release().await?;
 
     let mut map = BTreeMap::new();
