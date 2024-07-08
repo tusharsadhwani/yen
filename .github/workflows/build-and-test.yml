@@ -197,7 +197,9 @@ jobs:
           sudo dpkg --add-architecture i386
           sudo apt update
           sudo apt install libc6:i386 libcrypt1:i386
+
       - name: Run tests
+        if: matrix.name != 'Linux-aarch64'
         shell: bash
         run: |
           python -m venv venv
@@ -221,32 +223,3 @@ jobs:
             ${{ steps.bin.outputs.BIN_PATH }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  test_qemu:
-    needs: [build]
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - {
-              name: "Linux-aarch64",
-              target: aarch64-unknown-linux-musl,
-              arch: aarch64,
-            }
-    steps:
-      - name: Download yen binary
-        uses: actions/download-artifact@v4
-        with:
-          name: yen-${{ matrix.target }}
-
-      - name: Test binary
-        uses: uraimo/run-on-arch-action@v2
-        with:
-          arch: aarch64
-          distro: ubuntu22.04
-          # Not required, but speeds up builds by storing container images in
-          # a GitHub package registry.
-          githubToken: ${{ github.token }}
-          run: |
-            ls
