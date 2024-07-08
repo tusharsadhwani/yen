@@ -170,6 +170,7 @@ const FALLBACK_RESPONSE_BYTES: &[u8] = include_bytes!("../../src/yen/fallback_re
 #[cfg(all(target_os = "linux", target_arch = "x86"))]
 const LINUX_I686_RESPONSE_BYTES: &[u8] = include_bytes!("../../src/yen/linux_i686_release.json");
 
+#[allow(unused_variables)]
 async fn get_release_json(force_32bit: bool) -> miette::Result<String> {
     #[cfg(all(target_os = "linux", target_arch = "x86"))]
     return Ok(String::from_utf8_lossy(LINUX_I686_RESPONSE_BYTES).into_owned());
