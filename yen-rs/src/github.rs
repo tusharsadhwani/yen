@@ -172,7 +172,10 @@ const LINUX_I686_RESPONSE_BYTES: &[u8] = include_bytes!("../../src/yen/linux_i68
 
 async fn get_release_json() -> miette::Result<String> {
     #[cfg(all(target_os = "linux", target_arch = "x86"))]
-    return Ok(String::from_utf8_lossy(LINUX_I686_RESPONSE_BYTES).into_owned());
+    {
+        println!("Using the linux i686 data");
+        return Ok(String::from_utf8_lossy(LINUX_I686_RESPONSE_BYTES).into_owned());
+    }
 
     #[cfg(not(all(target_os = "linux", target_arch = "x86")))]
     {
