@@ -1,0 +1,252 @@
+# Taken from https://github.com/prefix-dev/pixi/blob/c32351a/.github/workflows/rust.yml
+name: Build and Test Static Binary
+
+on:
+  push:
+    tags:
+      - "v*"
+    branches:
+      - main
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RUST_LOG: info
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: "-D warnings"
+  CARGO_TERM_COLOR: always
+  CICD_INTERMEDIATES_DIR: "_cicd-intermediates"
+  TEST_FEATURES: "slow_integration_tests"
+  XDG_CACHE_HOME: ${{ github.workspace }}/.cache
+
+jobs:
+  crate_metadata:
+    name: Extract crate metadata
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Extract crate information
+        id: crate_metadata
+        run: |
+          cargo metadata --manifest-path yen-rs/Cargo.toml --no-deps --format-version 1 | jq -r '"name=" + .packages[0].name' | tee -a $GITHUB_OUTPUT
+          cargo metadata --manifest-path yen-rs/Cargo.toml --no-deps --format-version 1 | jq -r '"version=" + .packages[0].version' | tee -a $GITHUB_OUTPUT
+          cargo metadata --manifest-path yen-rs/Cargo.toml --no-deps --format-version 1 | jq -r '"maintainer=" + .packages[0].authors[0]' | tee -a $GITHUB_OUTPUT
+          cargo metadata --manifest-path yen-rs/Cargo.toml --no-deps --format-version 1 | jq -r '"homepage=" + .packages[0].homepage' | tee -a $GITHUB_OUTPUT
+    outputs:
+      name: ${{ steps.crate_metadata.outputs.name }}
+      version: ${{ steps.crate_metadata.outputs.version }}
+      maintainer: ${{ steps.crate_metadata.outputs.maintainer }}
+      homepage: ${{ steps.crate_metadata.outputs.homepage }}
+
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    needs: [crate_metadata]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {
+              name: "Linux-x86_64",
+              target: x86_64-unknown-linux-musl,
+              os: ubuntu-latest,
+            }
+          - {
+              name: "Linux-aarch64",
+              target: aarch64-unknown-linux-musl,
+              os: ubuntu-latest,
+            }
+          - {
+              name: "Linux-x86",
+              target: i686-unknown-linux-musl,
+              os: ubuntu-latest,
+            }
+          - {
+              name: "macOS-x86_64",
+              target: x86_64-apple-darwin,
+              os: macOS-latest,
+            }
+          - {
+              name: "macOS-aarch64",
+              target: aarch64-apple-darwin,
+              os: macOS-latest,
+            }
+          - {
+              name: "windows-x86_64",
+              target: x86_64-pc-windows-msvc,
+              os: windows-latest,
+            }
+          - {
+              name: "windows-x86",
+              target: i686-pc-windows-msvc,
+              os: windows-latest,
+            }
+    env:
+      #
+      # These are some environment variables that configure the build so that the binary size is reduced.
+      # Inspiration was taken from this blog: https://arusahni.net/blog/2020/03/optimizing-rust-binary-size.html
+      #
+
+      # Enable Link Time Optimization (LTO) for our release builds. This increases link time but drastically reduces
+      # binary size.
+      CARGO_PROFILE_RELEASE_LTO: true
+
+      # Use a single code gen unit, this effectively disables parallel linking but ensures that everything is linked
+      # together in a single unit which reduces the file-size at the cost of link time.
+      CARGO_PROFILE_RELEASE_CODEGEN_UNITS: 1
+
+      # Optimize the binary for size. This reduces the filesize at the cost of a slower binary.
+      CARGO_PROFILE_OPT_LEVEL: s
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ matrix.target }}
+          cache: false
+
+      - uses: taiki-e/setup-cross-toolchain-action@v1
+        with:
+          target: ${{ matrix.target }}
+
+      - name: Use static CRT
+        shell: bash
+        run: echo "RUSTFLAGS=${RUSTFLAGS} -C target-feature=+crt-static" >> "${GITHUB_ENV}"
+
+      - name: Set release specific compilation flags
+        if: steps.is-release.outputs.IS_RELEASE
+        shell: bash
+        run: |
+          echo "CARGO_PROFILE_RELEASE_LTO=true" >> $GITHUB_ENV
+          echo "CARGO_PROFILE_RELEASE_STRIP=true" >> $GITHUB_ENV
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Ensure cache directory exists
+        shell: bash
+        if: matrix.os == 'ubuntu-latest' && matrix.use-cross
+        run: |
+          mkdir -p ${XDG_CACHE_HOME}
+
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          cargo -V
+          rustc -V
+
+      - name: Check for release
+        id: is-release
+        shell: bash
+        run: |
+          unset IS_RELEASE ; if [[ $GITHUB_REF =~ ^refs/tags/v[0-9].* ]]; then IS_RELEASE='true' ; fi
+          echo "IS_RELEASE=${IS_RELEASE}" >> $GITHUB_OUTPUT
+
+      - name: Build
+        run: >
+          cargo build
+          --locked
+          --release
+          --manifest-path yen-rs/Cargo.toml
+          ${{ steps.build-options.outputs.CARGO_BUILD_OPTIONS}}
+
+      - name: Set binary name & path
+        id: bin
+        shell: bash
+        run: |
+          EXE_SUFFIX=""
+          case ${{ matrix.target }} in
+            *-pc-windows-*) EXE_SUFFIX=".exe" ;;
+          esac;
+
+          # Setup paths
+          BIN_NAME="${{ needs.crate_metadata.outputs.name }}"
+          BIN_PATH="yen-rs/target/${{ matrix.target }}/release/${BIN_NAME}"
+
+          mv "$BIN_PATH${EXE_SUFFIX}" "$BIN_PATH-${{matrix.target}}${EXE_SUFFIX}"
+          BIN_PATH="$BIN_PATH-${{matrix.target}}${EXE_SUFFIX}"
+
+          # Let subsequent steps know where to find the binary
+          echo "BIN_PATH=${BIN_PATH}" >> $GITHUB_OUTPUT
+          echo "BIN_NAME=${BIN_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Run the binary to ensure it's fine
+        shell: bash
+        run: |
+          ${{ steps.bin.outputs.BIN_PATH }} list &>> $GITHUB_STEP_SUMMARY
+
+      - name: Install linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt update
+          sudo apt install libc6:i386 libcrypt1:i386
+      - name: Run tests
+        shell: bash
+        run: |
+          python -m venv venv
+          if [ -d ./venv/bin ]; then VENV_BIN_PATH=./venv/bin; fi
+          if [ -d ./venv/Scripts ]; then VENV_BIN_PATH=./venv/Scripts; fi
+          ${VENV_BIN_PATH}/pip install -r requirements-dev.txt
+          YEN_RUST_PATH=${{ steps.bin.outputs.BIN_PATH }} ${VENV_BIN_PATH}/pytest
+
+      - name: "Artifact upload: binary"
+        uses: actions/upload-artifact@master
+        with:
+          name: yen-${{ matrix.target }}
+          path: ${{ steps.bin.outputs.BIN_PATH }}
+
+      - name: Publish packages
+        uses: softprops/action-gh-release@v1
+        if: steps.is-release.outputs.IS_RELEASE
+        with:
+          draft: true
+          files: |
+            ${{ steps.bin.outputs.BIN_PATH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test_qemu:
+    needs: [build]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {
+              name: "Linux-aarch64",
+              target: aarch64-unknown-linux-musl,
+              arch: aarch64,
+            }
+    steps:
+      - name: Download yen binary
+        uses: actions/download-artifact@v4
+        with:
+          name: yen-${{ matrix.target }}
+
+      - name: Test binary
+        uses: uraimo/run-on-arch-action@v2
+        with:
+          arch: aarch64
+          distro: ubuntu22.04
+          # Not required, but speeds up builds by storing container images in
+          # a GitHub package registry.
+          githubToken: ${{ github.token }}
+          run: |
+            ls
