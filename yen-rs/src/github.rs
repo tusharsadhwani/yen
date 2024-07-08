@@ -229,6 +229,7 @@ pub async fn list_pythons(force_32bit: bool) -> miette::Result<BTreeMap<Version,
     };
 
     let machine_suffixes = machine.get_suffixes();
+    println!("{machine_suffixes:?}");
     let releases = get_latest_python_release().await?;
 
     let mut map = BTreeMap::new();
