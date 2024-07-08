@@ -170,10 +170,12 @@ const FALLBACK_RESPONSE_BYTES: &[u8] = include_bytes!("../../src/yen/fallback_re
 #[cfg(all(target_os = "linux", target_arch = "x86"))]
 const LINUX_I686_RESPONSE_BYTES: &[u8] = include_bytes!("../../src/yen/linux_i686_release.json");
 
-async fn get_release_json() -> miette::Result<String> {
+async fn get_release_json(force_32bit: bool) -> miette::Result<String> {
     #[cfg(all(target_os = "linux", target_arch = "x86"))]
-    {
-        println!("Using the linux i686 data");
+    return Ok(String::from_utf8_lossy(LINUX_I686_RESPONSE_BYTES).into_owned());
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    if force_32bit {
         return Ok(String::from_utf8_lossy(LINUX_I686_RESPONSE_BYTES).into_owned());
     }
 
@@ -201,8 +203,8 @@ async fn get_release_json() -> miette::Result<String> {
     }
 }
 
-async fn get_latest_python_release() -> miette::Result<Vec<String>> {
-    let json = get_release_json()
+async fn get_latest_python_release(force_32bit: bool) -> miette::Result<Vec<String>> {
+    let json = get_release_json(force_32bit)
         .await
         .unwrap_or(String::from_utf8_lossy(FALLBACK_RESPONSE_BYTES).into_owned());
 
@@ -232,8 +234,7 @@ pub async fn list_pythons(force_32bit: bool) -> miette::Result<BTreeMap<Version,
     };
 
     let machine_suffixes = machine.get_suffixes();
-    println!("{machine_suffixes:?}");
-    let releases = get_latest_python_release().await?;
+    let releases = get_latest_python_release(force_32bit).await?;
 
     let mut map = BTreeMap::new();
 
