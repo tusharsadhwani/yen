@@ -167,7 +167,7 @@ impl MachineSuffix {
 }
 
 const FALLBACK_RESPONSE_BYTES: &[u8] = include_bytes!("../../src/yen/fallback_release_data.json");
-#[cfg(all(target_os = "linux", target_arch = "x86"))]
+#[cfg(all(target_os = "linux", any(target_arch = "x86", target_arch = "x86_64")))]
 const LINUX_I686_RESPONSE_BYTES: &[u8] = include_bytes!("../../src/yen/linux_i686_release.json");
 
 #[allow(unused_variables)]
