@@ -17,7 +17,8 @@ if exist "%SystemRoot%\System32\curl.exe" (
     echo Neither curl nor wget is installed. Please install one of them and try again.
     exit /b 1
 )
-goto :eof
+REM Return to the caller
+exit /b 0
 
 REM Download yen executable and save it to the .yen\bin directory
 SET "download_url=https://github.com/tusharsadhwani/yen/releases/latest/download/yen-rs-x86_64-pc-windows-msvc.exe"
