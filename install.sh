@@ -24,8 +24,8 @@ BINARY="yen-rs-${ARCH}-${PLATFORM}"
 
 printf "This script will automatically download and install yen for you.\nGetting it from this url: $DOWNLOAD_URL\nThe binary will be installed into '$INSTALL_DIR'\n"
 
-if ! hash curl 2> /dev/null; then
-  echo "error: you do not have 'curl' installed which is required for this script."
+if ! hash curl 2> /dev/null && ! hash wget 2> /dev/null; then
+  echo "error: you do not have 'curl' or 'wget' installed which are required for this script."
   exit 1
 fi
 
@@ -37,12 +37,30 @@ cleanup() {
 
 trap cleanup EXIT
 
+DOWNLOAD_FILE() {
+  URL=$1
+  OUTPUT=$2
+
+  if hash curl 2> /dev/null; then
+    HTTP_CODE=$(curl -SL --progress-bar "$URL" --output "$OUTPUT" --write-out "%{http_code}")
+  elif hash wget 2> /dev/null; then
+    wget -q --show-progress -O "$OUTPUT" "$URL"
+    HTTP_CODE=$?
+    if [ $HTTP_CODE -eq 0 ]; then
+      HTTP_CODE=200
+    else
+      HTTP_CODE=500
+    fi
+  fi
+
+  if [ ${HTTP_CODE} -lt 200 ] || [ ${HTTP_CODE} -gt 299 ]; then
+    echo "error: '${URL}' is not available"
+    exit 1
+  fi
+}
+
 DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${BINARY}"
-HTTP_CODE=$(curl -SL --progress-bar "$DOWNLOAD_URL" --output "$TEMP_FILE" --write-out "%{http_code}")
-if [ ${HTTP_CODE} -lt 200 ] || [ ${HTTP_CODE} -gt 299 ]; then
-  echo "error: '${DOWNLOAD_URL}' is not available"
-  exit 1
-fi
+DOWNLOAD_FILE "$DOWNLOAD_URL" "$TEMP_FILE"
 
 # Move yen to the install directory
 mkdir -p "$INSTALL_DIR"
@@ -50,23 +68,12 @@ mv "$TEMP_FILE" "$INSTALL_DIR/yen"
 
 # Download userpath and microvenv too
 USERPATH_URL="https://yen.tushar.lol/userpath.pyz"
-HTTP_CODE=$(curl -SL --progress-bar "$USERPATH_URL" --output "$TEMP_FILE" --write-out "%{http_code}")
-if [ ${HTTP_CODE} -lt 200 ] || [ ${HTTP_CODE} -gt 299 ]; then
-  echo "error: '${USERPATH_URL}' is not available"
-  exit 1
-fi
-mkdir -p "$INSTALL_DIR"
+DOWNLOAD_FILE "$USERPATH_URL" "$TEMP_FILE"
 mv "$TEMP_FILE" "$INSTALL_DIR/userpath.pyz"
 
 MICROVENV_URL="https://yen.tushar.lol/microvenv.py"
-HTTP_CODE=$(curl -SL --progress-bar "$MICROVENV_URL" --output "$TEMP_FILE" --write-out "%{http_code}")
-if [ ${HTTP_CODE} -lt 200 ] || [ ${HTTP_CODE} -gt 299 ]; then
-  echo "error: '${MICROVENV_URL}' is not available"
-  exit 1
-fi
-mkdir -p "$INSTALL_DIR"
+DOWNLOAD_FILE "$MICROVENV_URL" "$TEMP_FILE"
 mv "$TEMP_FILE" "$INSTALL_DIR/microvenv.py"
-
 
 update_shell() {
     FILE=$1
