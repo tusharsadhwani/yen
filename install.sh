@@ -22,6 +22,7 @@ fi
 
 BINARY="yen-rs-${ARCH}-${PLATFORM}"
 
+DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${BINARY}"
 printf "This script will automatically download and install yen for you.\nGetting it from this url: $DOWNLOAD_URL\nThe binary will be installed into '$INSTALL_DIR'\n"
 
 if ! hash curl 2> /dev/null; then
@@ -37,7 +38,6 @@ cleanup() {
 
 trap cleanup EXIT
 
-DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${BINARY}"
 HTTP_CODE=$(curl -SL --progress-bar "$DOWNLOAD_URL" --output "$TEMP_FILE" --write-out "%{http_code}")
 if [ ${HTTP_CODE} -lt 200 ] || [ ${HTTP_CODE} -gt 299 ]; then
   echo "error: '${DOWNLOAD_URL}' is not available"
@@ -75,8 +75,17 @@ update_shell() {
     if [ -f "$FILE" ]; then
         if ! grep -Fxq "$LINE" "$FILE"
         then
-            echo "Updating '${FILE}'"
-            echo "$LINE" >> "$FILE"
+          while true; do
+            printf "Install 'yen' in '${FILE}'? [y/n] "
+            echo
+            old_stty_cfg=$(stty -g)
+            stty raw -echo ; yn=$(head -c 1) ; stty $old_stty_cfg # Careful playing with stty
+            case $yn in
+              [Yy]* ) echo "$LINE" >> "$FILE"; break;;
+              [Nn]* ) break;;
+              * ) echo "Please answer [y]es or [n]o.";;
+            esac
+          done
         fi
     fi
 }
