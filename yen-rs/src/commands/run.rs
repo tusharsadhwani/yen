@@ -21,13 +21,17 @@ pub struct Args {
     #[arg(short, long, default_value_t = Version::from_str(DEFAULT_PYTHON_VERSION).unwrap())]
     python: Version,
 
+    /// Force downloading a 32 bit Python version
+    #[arg(long, alias = "32bit")]
+    force_32bit: bool,
+
     /// Arguments to pass to the command invocation
     #[arg(num_args = 0..)]
     run_args: Vec<String>,
 }
 
 pub async fn execute(args: Args) -> miette::Result<()> {
-    let (_, python_bin_path) = ensure_python(args.python).await?;
+    let (_, python_bin_path) = ensure_python(args.python, args.force_32bit).await?;
 
     let package_name = args.package_name;
     let (shim_path, _) =

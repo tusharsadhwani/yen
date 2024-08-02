@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -51,6 +51,12 @@ jobs:
           - {
               python-version: "3.12",
               tox-env: "py312",
+              os: "ubuntu-latest",
+              arch: arm64,
+            }
+          - {
+              python-version: "3.12",
+              tox-env: "py312",
               os: "windows-latest",
               arch: x64,
             }
@@ -68,7 +74,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
+      - name: Install linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt update
+          sudo apt install libc6:i386 libcrypt1:i386
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
+
       - name: Run tests and type checking
         run: tox -e ${{matrix.tox-env }}

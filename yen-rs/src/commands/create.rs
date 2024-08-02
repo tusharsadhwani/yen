@@ -19,6 +19,10 @@ pub struct Args {
     /// Python version to create venv
     #[arg(short, long, required = true)]
     python: Version,
+
+    /// Force downloading a 32 bit Python version
+    #[arg(long, alias = "32bit")]
+    force_32bit: bool,
 }
 
 pub async fn create_env(python_bin_path: PathBuf, venv_path: &PathBuf) -> miette::Result<()> {
@@ -71,7 +75,7 @@ pub async fn create_env(python_bin_path: PathBuf, venv_path: &PathBuf) -> miette
 }
 
 pub async fn execute(args: Args) -> miette::Result<()> {
-    let (python_version, python_bin_path) = ensure_python(args.python).await?;
+    let (python_version, python_bin_path) = ensure_python(args.python, args.force_32bit).await?;
     create_env(python_bin_path, &args.venv_path).await?;
     println!(
         "Created {} with Python {} ✨",

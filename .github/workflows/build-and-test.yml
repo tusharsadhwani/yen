@@ -57,7 +57,7 @@ jobs:
           - {
               name: "Linux-x86_64",
               target: x86_64-unknown-linux-musl,
-              os: ubuntu-20.04,
+              os: ubuntu-latest,
             }
           - {
               name: "Linux-aarch64",
@@ -138,7 +138,7 @@ jobs:
 
       - name: Ensure cache directory exists
         shell: bash
-        if: matrix.os == 'ubuntu-20.04' && matrix.use-cross
+        if: matrix.os == 'ubuntu-latest' && matrix.use-cross
         run: |
           mkdir -p ${XDG_CACHE_HOME}
 
@@ -186,12 +186,20 @@ jobs:
           echo "BIN_PATH=${BIN_PATH}" >> $GITHUB_OUTPUT
           echo "BIN_NAME=${BIN_NAME}" >> $GITHUB_OUTPUT
 
-      - name: Run the binary
+      - name: Run the binary to ensure it's fine
         shell: bash
         run: |
           ${{ steps.bin.outputs.BIN_PATH }} list &>> $GITHUB_STEP_SUMMARY
 
+      - name: Install linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt update
+          sudo apt install libc6:i386 libcrypt1:i386
+
       - name: Run tests
+        if: matrix.name != 'Linux-aarch64'
         shell: bash
         run: |
           python -m venv venv

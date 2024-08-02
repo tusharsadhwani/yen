@@ -1,6 +1,5 @@
 use std::{
     cmp::min,
-    env::consts,
     fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
@@ -31,7 +30,12 @@ pub const IS_WINDOWS: bool = true;
 #[cfg(not(target_os = "windows"))]
 pub const IS_WINDOWS: bool = false;
 
-pub async fn ensure_python(version: Version) -> miette::Result<(Version, PathBuf)> {
+pub const SUFFIX_32BIT: &str = "_32bit";
+
+pub async fn ensure_python(
+    version: Version,
+    force_32bit: bool,
+) -> miette::Result<(Version, PathBuf)> {
     if !PYTHON_INSTALLS_PATH.exists() {
         fs::create_dir(PYTHON_INSTALLS_PATH.to_path_buf()).into_diagnostic()?;
     }
@@ -39,6 +43,9 @@ pub async fn ensure_python(version: Version) -> miette::Result<(Version, PathBuf
         let Ok(python_folder) = path else {
             continue;
         };
+        if force_32bit && !python_folder.path().ends_with(SUFFIX_32BIT) {
+            continue;
+        }
 
         let resolved_python_version = python_folder.file_name().to_string_lossy().into_owned();
         if !resolved_python_version.starts_with(&version.to_string()) {
@@ -51,7 +58,8 @@ pub async fn ensure_python(version: Version) -> miette::Result<(Version, PathBuf
         return Ok((version, python_bin_path));
     }
 
-    let (version, link) = resolve_python_version(version).await?;
+    let (version, link) = resolve_python_version(version, force_32bit).await?;
+    // TODO: use SUFFIX_32BIT here
     let download_dir = PYTHON_INSTALLS_PATH.join(version.to_string());
     if !download_dir.exists() {
         fs::create_dir_all(&download_dir).into_diagnostic()?;
@@ -84,7 +92,7 @@ pub async fn find_or_download_python() -> miette::Result<PathBuf> {
 
     // No Python binary found. Download one.
     let (_, python_bin_path) =
-        ensure_python(Version::from_str(DEFAULT_PYTHON_VERSION).unwrap()).await?;
+        ensure_python(Version::from_str(DEFAULT_PYTHON_VERSION).unwrap(), false).await?;
     return Ok(python_bin_path);
 }
 
@@ -239,47 +247,6 @@ pub fn yen_client() -> reqwest::Client {
 pub fn home_dir() -> PathBuf {
     #[allow(deprecated)]
     std::env::home_dir().expect("Unable to get home dir")
-}
-
-#[allow(unreachable_code)]
-pub fn detect_target() -> miette::Result<String> {
-    #[cfg(target_os = "linux")]
-    {
-        let gnu = is_glibc()?;
-        if gnu {
-            #[cfg(target_arch = "x86_64")]
-            return Ok("x86_64-unknown-linux-gnu".into());
-
-            #[cfg(target_arch = "aarch64")]
-            return Ok("aarch64-unknown-linux-gnu".into());
-
-            #[cfg(target_arch = "x86")]
-            return Ok("i686-unknown-linux-gnu".into());
-        } else {
-            #[cfg(target_arch = "x86_64")]
-            return Ok("x86_64-unknown-linux-musl".into());
-        }
-    }
-
-    #[cfg(target_os = "macos")]
-    {
-        #[cfg(target_arch = "x86_64")]
-        return Ok("x86_64-apple-darwin".into());
-
-        #[cfg(target_arch = "aarch64")]
-        return Ok("aarch64-apple-darwin".into());
-    }
-
-    #[cfg(target_os = "windows")]
-    {
-        #[cfg(target_arch = "x86_64")]
-        return Ok("x86_64-pc-windows-msvc".into());
-
-        #[cfg(target_arch = "x86")]
-        return Ok("i686-pc-windows-msvc".into());
-    }
-
-    miette::bail!("{}-{} is not supported", consts::OS, consts::ARCH);
 }
 
 #[cfg(target_os = "linux")]

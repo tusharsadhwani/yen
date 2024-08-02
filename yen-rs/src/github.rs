@@ -1,9 +1,9 @@
-use std::{collections::BTreeMap, fmt::Display, str::FromStr};
+use std::{collections::BTreeMap, env::consts, fmt::Display, str::FromStr};
 
 use miette::IntoDiagnostic;
 use serde::Deserialize;
 
-use crate::{utils::detect_target, RE};
+use crate::RE;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct GithubResp {
@@ -79,13 +79,15 @@ impl Display for Version {
     }
 }
 
+#[allow(dead_code)]
+#[derive(Debug)]
 pub enum MachineSuffix {
     DarwinArm64,
     DarwinX64,
     LinuxAarch64,
     LinuxX64GlibC,
     LinuxX64Musl,
-    LinuxX86,
+    LinuxX86GlibC,
     WindowsX64,
     WindowsX86,
 }
@@ -101,34 +103,82 @@ impl MachineSuffix {
                 "x86_64-unknown-linux-gnu-install_only.tar.gz".into(),
             ],
             Self::LinuxX64Musl => vec!["x86_64_v3-unknown-linux-musl-install_only.tar.gz".into()],
-            Self::LinuxX86 => vec!["i686-unknown-linux-gnu-install_only.tar.gz".into()],
+            Self::LinuxX86GlibC => vec!["i686-unknown-linux-gnu-install_only.tar.gz".into()],
             Self::WindowsX64 => vec!["x86_64-pc-windows-msvc-shared-install_only.tar.gz".into()],
             Self::WindowsX86 => vec!["i686-pc-windows-msvc-install_only.tar.gz".into()],
         }
     }
 
-    async fn default() -> miette::Result<Self> {
-        match detect_target()?.as_str() {
-            "x86_64-unknown-linux-musl" => Ok(Self::LinuxX64Musl),
-            "x86_64-unknown-linux-gnu" => Ok(Self::LinuxX64GlibC),
-            "i686-unknown-linux-gnu" => Ok(Self::LinuxX86),
-            "aarch64-unknown-linux-gnu" => Ok(Self::LinuxAarch64),
-            "aarch64-apple-darwin" => Ok(Self::DarwinArm64),
-            "x86_64-apple-darwin" => Ok(Self::DarwinX64),
-            "x86_64-pc-windows-msvc" => Ok(Self::WindowsX64),
-            "i686-pc-windows-msvc" => Ok(Self::WindowsX86),
-            _ => miette::bail!("Unknown target!"),
+    #[allow(unreachable_code)]
+    fn default() -> miette::Result<Self> {
+        #[cfg(target_os = "linux")]
+        {
+            use crate::utils::is_glibc;
+
+            let gnu = is_glibc()?;
+            if gnu {
+                #[cfg(target_arch = "x86_64")]
+                return Ok(MachineSuffix::LinuxX64GlibC);
+
+                #[cfg(target_arch = "aarch64")]
+                return Ok(MachineSuffix::LinuxAarch64);
+
+                #[cfg(target_arch = "x86")]
+                return Ok(MachineSuffix::LinuxX86GlibC);
+            } else {
+                #[cfg(target_arch = "x86_64")]
+                return Ok(MachineSuffix::LinuxX64Musl);
+            }
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            #[cfg(target_arch = "x86_64")]
+            return Ok(MachineSuffix::DarwinX64);
+
+            #[cfg(target_arch = "aarch64")]
+            return Ok(MachineSuffix::DarwinArm64);
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            #[cfg(target_arch = "x86_64")]
+            return Ok(MachineSuffix::WindowsX64);
+
+            #[cfg(target_arch = "x86")]
+            return Ok(MachineSuffix::WindowsX86);
+        }
+
+        miette::bail!("{}-{} is not supported", consts::OS, consts::ARCH);
+    }
+
+    fn get_32bit(&self) -> Option<MachineSuffix> {
+        match self {
+            Self::DarwinArm64 => None,
+            Self::DarwinX64 => None,
+            Self::LinuxAarch64 => None,
+            Self::LinuxX64GlibC => Some(Self::LinuxX86GlibC),
+            Self::LinuxX64Musl => None,
+            Self::LinuxX86GlibC => Some(Self::LinuxX86GlibC),
+            Self::WindowsX64 => Some(Self::WindowsX86),
+            Self::WindowsX86 => Some(Self::WindowsX86),
         }
     }
 }
 
 const FALLBACK_RESPONSE_BYTES: &[u8] = include_bytes!("../../src/yen/fallback_release_data.json");
-#[cfg(all(target_os = "linux", target_arch = "x86"))]
+#[cfg(all(target_os = "linux", any(target_arch = "x86", target_arch = "x86_64")))]
 const LINUX_I686_RESPONSE_BYTES: &[u8] = include_bytes!("../../src/yen/linux_i686_release.json");
 
-async fn get_release_json() -> miette::Result<String> {
+#[allow(unused_variables)]
+async fn get_release_json(force_32bit: bool) -> miette::Result<String> {
     #[cfg(all(target_os = "linux", target_arch = "x86"))]
     return Ok(String::from_utf8_lossy(LINUX_I686_RESPONSE_BYTES).into_owned());
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    if force_32bit {
+        return Ok(String::from_utf8_lossy(LINUX_I686_RESPONSE_BYTES).into_owned());
+    }
 
     #[cfg(not(all(target_os = "linux", target_arch = "x86")))]
     {
@@ -154,8 +204,8 @@ async fn get_release_json() -> miette::Result<String> {
     }
 }
 
-async fn get_latest_python_release() -> miette::Result<Vec<String>> {
-    let json = get_release_json()
+async fn get_latest_python_release(force_32bit: bool) -> miette::Result<Vec<String>> {
+    let json = get_release_json(force_32bit)
         .await
         .unwrap_or(String::from_utf8_lossy(FALLBACK_RESPONSE_BYTES).into_owned());
 
@@ -172,10 +222,20 @@ async fn get_latest_python_release() -> miette::Result<Vec<String>> {
     Ok(github_resp.into())
 }
 
-pub async fn list_pythons() -> miette::Result<BTreeMap<Version, String>> {
-    let machine_suffixes = MachineSuffix::default().await?.get_suffixes();
+pub async fn list_pythons(force_32bit: bool) -> miette::Result<BTreeMap<Version, String>> {
+    let machine = MachineSuffix::default()?;
+    let machine = if force_32bit {
+        let machine_32bit = machine.get_32bit();
+        match machine_32bit {
+            Some(machine) => machine,
+            None => miette::bail!("Unsupported 32 bit architecture: {machine:?}"),
+        }
+    } else {
+        machine
+    };
 
-    let releases = get_latest_python_release().await?;
+    let machine_suffixes = machine.get_suffixes();
+    let releases = get_latest_python_release(force_32bit).await?;
 
     let mut map = BTreeMap::new();
 
@@ -196,8 +256,11 @@ pub async fn list_pythons() -> miette::Result<BTreeMap<Version, String>> {
     Ok(map)
 }
 
-pub async fn resolve_python_version(request_version: Version) -> miette::Result<(Version, String)> {
-    let pythons = list_pythons().await?;
+pub async fn resolve_python_version(
+    request_version: Version,
+    force_32bit: bool,
+) -> miette::Result<(Version, String)> {
+    let pythons = list_pythons(force_32bit).await?;
 
     for version in pythons.keys().rev() {
         if version

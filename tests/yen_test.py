@@ -106,6 +106,24 @@ def test_yen_create(yen_path: str) -> None:
         assert "Created" in output
         assert "testvenv" in output
         assert "Python 3.11" in output
+
+        # TODO: add tests for pip existing, activation scripts existing
+    finally:
+        shutil.rmtree("testvenv", ignore_errors=True)
+
+
+@parametrize_python_and_rust_path
+def test_yen_create_force_32bit(yen_path: str) -> None:
+    if platform.system() == "Darwin":
+        pytest.skip("Can't do x86 on mac.")
+
+    try:
+        output = run([yen_path, "create", "-p3.11", "testvenv", "--32bit"])
+        assert "Created" in output
+        assert "testvenv" in output
+        assert "Python 3.11" in output
+
+        # TODO: add tests for pip existing, activation scripts existing
     finally:
         shutil.rmtree("testvenv", ignore_errors=True)
 
@@ -113,6 +131,36 @@ def test_yen_create(yen_path: str) -> None:
 @parametrize_python_and_rust_path
 def test_yen_install(yen_path: str) -> None:
     output = run([yen_path, "install", "-p3.10", "meowsay"])
+    assert "Installed" in output
+    assert "meowsay" in output
+    assert "Python 3.10" in output
+
+    meowsay_output = run(["meowsay", "hi"], cwd=PACKAGES_INSTALL_PATH)
+    assert meowsay_output == dedent(
+        r"""
+         ____
+        < hi >
+         ----
+                \      |\---/|
+                 \     | ,_, |
+                        \_`_/-..----.
+                     ___/ `   ' ,\"\"+ \  sk
+                    (__...'   __\    |`.___.';
+                      (_,...'(_,.`__)/'.....+
+        """[1:]  # to remove leading newline
+    )
+
+    output = run([yen_path, "install", "meowsay"])
+    assert "meowsay" in output
+    assert "already installed" in output
+
+
+@parametrize_python_and_rust_path
+def test_yen_install_force_32bit(yen_path: str) -> None:
+    if platform.system() == "Darwin":
+        pytest.skip("Can't do x86 on mac.")
+
+    output = run([yen_path, "install", "-p3.10", "meowsay", "--32bit"])
     assert "Installed" in output
     assert "meowsay" in output
     assert "Python 3.10" in output

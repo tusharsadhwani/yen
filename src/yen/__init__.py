@@ -12,7 +12,7 @@ import sys
 import tarfile
 from urllib.request import urlretrieve
 
-from yen.downloader import download, read_url
+from yen.downloader import SUFFIX_32BIT, download, read_url
 from yen.github import resolve_python_version
 
 YEN_BIN_PATH = os.path.abspath(
@@ -84,7 +84,7 @@ def find_or_download_python() -> str:
             return python_bin_path
 
     # No Python binary found. Download one.
-    _, python_bin_path = ensure_python(DEFAULT_PYTHON_VERSION)
+    _, python_bin_path = ensure_python(DEFAULT_PYTHON_VERSION, force_32bit=False)
     return python_bin_path
 
 
@@ -106,18 +106,20 @@ def _python_bin_path(python_directory: str) -> str:
         return os.path.join(python_directory, "python", "bin", "python3")
 
 
-def ensure_python(python_version: str) -> tuple[str, str]:
+def ensure_python(python_version: str, force_32bit: bool) -> tuple[str, str]:
     """Checks if given Python version exists locally. If not, downloads it."""
     os.makedirs(PYTHON_INSTALLS_PATH, exist_ok=True)
 
     for python_folder_name in os.listdir(PYTHON_INSTALLS_PATH):
         python_folder = os.path.join(PYTHON_INSTALLS_PATH, python_folder_name)
         if python_folder_name.startswith(python_version):
-            # already installed
-            python_bin_path = _python_bin_path(python_folder)
-            return python_folder_name, python_bin_path
+            if force_32bit and python_folder_name.endswith(SUFFIX_32BIT):
+                # already installed
+                python_bin_path = _python_bin_path(python_folder)
+                return python_folder_name, python_bin_path
 
-    python_version, download_link = resolve_python_version(python_version)
+    python_version, download_link = resolve_python_version(python_version, force_32bit)
+    # TODO: use suffix_32bit here
     download_directory = os.path.join(PYTHON_INSTALLS_PATH, python_version)
 
     os.makedirs(download_directory, exist_ok=True)
@@ -137,7 +139,7 @@ def ensure_python(python_version: str) -> tuple[str, str]:
         print("\033[1;31mError:\033[m Checksum did not match!")
         os.remove(downloaded_filepath)
         raise SystemExit(1)
-    print("Checksum verified!")
+    print("Checksum verified!", file=sys.stderr)
 
     with tarfile.open(downloaded_filepath, mode="r:gz") as tar:
         tar.extractall(download_directory)
@@ -194,6 +196,7 @@ def install_package(
         else:
             shim_path += ".exe"
 
+    # TODO: use suffix_32bit here
     venv_name = f"venv_{package_name}"
     venv_path = os.path.join(PACKAGE_INSTALLS_PATH, venv_name)
     if os.path.exists(shim_path):
