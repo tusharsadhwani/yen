@@ -17,7 +17,9 @@ from rich.progress import (
     TimeRemainingColumn,
     TransferSpeedColumn,
 )
+from rich.console import Console
 
+SUFFIX_32BIT = "_32bit"
 
 PROGRESS = Progress(
     TextColumn("[bold blue]{task.fields[display_name]}"),
@@ -29,6 +31,7 @@ PROGRESS = Progress(
     TransferSpeedColumn(),
     "•",
     TimeRemainingColumn(),
+    console=Console(stderr=True),
 )
 
 
