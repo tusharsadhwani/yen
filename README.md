@@ -28,7 +28,7 @@ We're finally putting an end to this XKCD.
 
   Works on Windows, MacOS and Linux (`libc` and `musl`), on Intel and ARM chips.
 
-- **Instant `venv` creation**: Thanks to `microvenv`, `yen` can create virutal
+- **Instant `venv` creation**: Thanks to `microvenv`, `yen` can create virtual
   environments much faster than the builtin `venv` module:
 
   ```console
@@ -69,13 +69,14 @@ Get `yen` by running the following command:
   Using cmd:
 
   ```cmd
-  curl -L yen.tushar.lol/install.bat | cmd
+  curl -L yen.tushar.lol/install.bat -o yen-install.bat
+  yen-install.bat
   ```
 
   or using Powershell:
 
   ```pwsh
-  curl -L yen.tushar.lol/install.ps1 | Invoke-Expression
+  curl yen.tushar.lol/install.ps1 | Invoke-Expression
   ```
 
 or if you prefer, get it via `pip`:
