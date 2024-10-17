@@ -6,7 +6,9 @@ import argparse
 import os.path
 import subprocess
 import sys
+import re
 from typing import Literal
+from typing_extensions import Unpack
 
 from yen import (
     DEFAULT_PYTHON_VERSION,
@@ -22,7 +24,7 @@ from yen.github import NotAvailable, list_pythons
 
 
 class YenArgs:
-    command: Literal["list", "ensurepath", "create", "install", "run", "exec"]
+    command: Literal["list", "ensurepath", "create", "install", "run", "exec", "update"]
     python: str
     venv_path: str
     package_name: str
@@ -39,6 +41,9 @@ def cli() -> int:
 
     subparsers.add_parser("list")
     subparsers.add_parser("ensurepath")
+
+    update_parser = subparsers.add_parser("update")
+    update_parser.add_argument("-p", "--python", default=DEFAULT_PYTHON_VERSION)
 
     create_parser = subparsers.add_parser("create")
     create_parser.add_argument("venv_path", type=os.path.abspath)
@@ -84,6 +89,29 @@ def cli() -> int:
             f"`{PACKAGE_INSTALLS_PATH}` is now present in your PATH."
             " Restart your shell for it to take effect."
         )
+
+    if args.command == "update":
+        print("Updating Yen...")
+        _, python_bin_path = ensure_python(args.python)
+
+        try:
+            result = subprocess.run(
+                [python_bin_path, "-m", "pip", "install", "-U", "yen"],
+                check=True,
+                capture_output=True,
+            )
+            std_out = str(result.stdout)
+            if result.returncode == 0:
+                if "Requirement already satisfied" in std_out:
+                    print("Yen is already in updated version")
+                elif "Successfully installed" in std_out:
+                    # fetch new version with regex?
+                    version_match = re.search(r"Successfully installed yen1-(\d+\.\d+\.\d+)", std_out)
+                    if version_match:
+                        print(f"Yen successfully updated to version {version_match.group(1)}!")
+                    print("Yen successfully updated!")
+        except subprocess.CalledProcessError:
+            print("Update failed; something went wrong!")
 
     elif args.command == "create":
         try:
