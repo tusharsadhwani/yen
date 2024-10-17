@@ -106,7 +106,7 @@ def cli() -> int:
                     print("Yen is already in updated version")
                 elif "Successfully installed" in std_out:
                     # fetch new version with regex?
-                    version_match = re.search(r"Successfully installed yen1-(\d+\.\d+\.\d+)", std_out)
+                    version_match = re.search(r"Successfully installed yen-(\d+\.\d+\.\d+)", std_out)
                     if version_match:
                         print(f"Yen successfully updated to version {version_match.group(1)}!")
                     print("Yen successfully updated!")
