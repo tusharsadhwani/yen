@@ -19,7 +19,7 @@ mod utils;
 
 lazy_static! {
     static ref GITHUB_API_URL: &'static str =
-        "https://api.github.com/repos/indygreg/python-build-standalone/releases/latest";
+        "https://api.github.com/repos/astral-sh/python-build-standalone/releases/latest";
     static ref RE: Regex = Regex::new(r"cpython-(\d+\.\d+.\d+)").expect("Unable to create regex!");
     static ref GLIBC: Regex = Regex::new(r"GNU|GLIBC|glibc").expect("Unable to create regex!");
     static ref YEN_BIN_PATH: PathBuf = {
