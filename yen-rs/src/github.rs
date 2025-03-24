@@ -102,7 +102,7 @@ impl MachineSuffix {
             ],
             Self::LinuxX64Musl => vec!["x86_64_v3-unknown-linux-musl-install_only.tar.gz".into()],
             Self::LinuxX86 => vec!["i686-unknown-linux-gnu-install_only.tar.gz".into()],
-            Self::WindowsX64 => vec!["x86_64-pc-windows-msvc-shared-install_only.tar.gz".into()],
+            Self::WindowsX64 => vec!["x86_64-pc-windows-msvc-install_only.tar.gz".into()],
             Self::WindowsX86 => vec!["i686-pc-windows-msvc-install_only.tar.gz".into()],
         }
     }

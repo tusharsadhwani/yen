@@ -36,13 +36,13 @@ MACHINE_SUFFIX: dict[str, dict[str, Any]] = {
         },
     },
     "Windows": {
-        "AMD64": ["x86_64-pc-windows-msvc-shared-install_only.tar.gz"],
+        "AMD64": ["x86_64-pc-windows-msvc-install_only.tar.gz"],
         "i686": ["i686-pc-windows-msvc-install_only.tar.gz"],
     },
 }
 
 GITHUB_API_RELEASES_URL = (
-    "https://api.github.com/repos/indygreg/python-build-standalone/releases/"
+    "https://api.github.com/repos/astral-sh/python-build-standalone/releases/"
 )
 PYTHON_VERSION_REGEX = re.compile(r"cpython-(\d+\.\d+\.\d+)")
 
